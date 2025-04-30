@@ -3,11 +3,11 @@
 ## 📚 Table of Contents
 
 1. [What is This?](#-what-is-this)
-2. [Architecture Diagram](#-architecture-diagram)
-3. [What Can You Do With It?](#-what-can-you-do-with-it)
+2. [What Can You Do With It?](#-what-can-you-do-with-it)
+3. [Required Software](#-required-software)
 4. [Getting Started](#-getting-started)
    - [Set Up Metabase](#1-set-up-metabase-if-you-havent-already)
-   - [Clone the Repository](#2-clone-the-repository)
+   - [Clone or Download the Repository](#2-clone-or-download-the-repository)
    - [Install uv Package Manager](#3-install-uv-package-manager)
    - [Create a Virtual Environment](#4-create-a-virtual-environment)
    - [Install Requirements](#5-install-requirements)
@@ -15,22 +15,24 @@
    - [Connect to Your AI Client](#7-connect-to-your-ai-client)
 5. [Available Tools](#-available-tools)
 6. [Example Prompts to Try](#-example-prompts-to-try)
-7. [License](#-license)
+7. [Architecture Diagram](#-architecture-diagram)
+8. [License](#-license)
 
 ---
 
 ## 😊 What is This?
 
-**Metabase MCP Server** is a server that connects [Metabase](https://www.metabase.com/) with AI clients using the **Model Context Protocol (MCP)**.  
-It allows you to interact with your dashboards, charts, SQL queries, and databases through natural language conversations.
+**Metabase MCP Server** is a backend integration layer that connects your **Metabase** instance with **AI assistants** using the **Model Context Protocol (MCP)**. This allows analysts, product managers, or even executives to interact with business intelligence assets like dashboards and charts using **natural language**—through any MCP-compatible AI client (e.g., Claude Desktop).
 
-You can use it with AI clients like Claude Desktop, or any other MCP-compatible AI client.
+Instead of navigating through menus or constructing SQL queries manually, you can:
 
----
+- Generate dashboards and charts dynamically by describing what you want.
+- Modify or delete existing charts and dashboards through chat.
+- Execute SQL queries and retrieve results in real time.
+- Organize dashboards, charts, and collections using structured prompts.
+- Manage user access and database connections effortlessly.
 
-## 📐 Architecture Diagram
-
-![Architecture Diagram](./assets/architecture_diagram.png)
+This project makes Metabase not just a dashboarding tool—but a conversational, intelligent business assistant.
 
 ---
 
@@ -56,6 +58,18 @@ You can use it with AI clients like Claude Desktop, or any other MCP-compatible 
 
 ---
 
+## 🧰 Required Software
+
+Make sure the following software is installed and available in your system path:
+
+-   **Python 3.11+** – Required to run the MCP server backend. [Download Python](https://www.python.org/downloads/)
+    
+-   **Node.js** – Required for running auxiliary MCP components or inspectors. [Download Node.js](https://nodejs.org/)
+        
+-   **Any MCP-compatible AI client** – Example: Claude Desktop. [Download Claude Desktop](https://claude.ai/download)
+
+---
+
 ## 🚀 Getting Started
 
 ### 1. Set Up Metabase (If you haven't already)
@@ -64,11 +78,34 @@ Follow the official Metabase installation guide: [Metabase Docs](https://www.met
 
 ---
 
-### 2. Clone the Repository
+### 2. Clone or Download the Repository
+
+You need to get this tool onto your computer. You can either download it manually or use Git.
+Open your computer's Terminal (Mac) or Command Prompt (Windows).
+Navigate to the folder where you unzipped the files or want to clone the project:
+
+```bash
+# Example (replace with your actual path):
+cd ~/Downloads/metabase-mcp-server-dev
+```
+
+**Option 1: Download ZIP**
+
+1.  Go to the [GitHub repository](https://github.com/codewalnut/metabase-mcp-server)
+    
+2.  Click the green **"Code"** button
+    
+3.  Select **"Download ZIP"**
+    
+4.  Unzip the downloaded file to a location like your **Documents** folder
+    
+
+**Option 2: Use Git** If you're familiar with Git, run this in your terminal:
 
 ```bash
 git clone https://github.com/codewalnut/metabase-mcp-server.git
 cd metabase-mcp-server
+
 ```
 
 ---
@@ -228,6 +265,12 @@ Make sure to match the correct format based on your OS to avoid errors.
 - Show all users in the 'Admin' group.
 - Create a new group called 'Finance Analysts'.
 - Connect to a Supabase database and list all tables.
+
+---
+
+## 📐 Architecture Diagram
+
+![Architecture Diagram](./assets/architecture_diagram.png)
 
 ---
 
