@@ -2,9 +2,9 @@
 
 ## 📚 Table of Contents
 
-1. [What is This?](#-what-is-this)
-2. [What Can You Do With It?](#-what-can-you-do-with-it)
-3. [Required Software](#-required-software)
+1. [What is this tool about?](#-what-is-this-tool-about)
+2. [Required Software](#-required-software)
+3. [Architecture Diagram](#-architecture-diagram)
 4. [Getting Started](#-getting-started)
    - [Set Up Metabase](#1-set-up-metabase-if-you-havent-already)
    - [Clone or Download the Repository](#2-clone-or-download-the-repository)
@@ -15,46 +15,21 @@
    - [Connect to Your AI Client](#7-connect-to-your-ai-client)
 5. [Available Tools](#-available-tools)
 6. [Example Prompts to Try](#-example-prompts-to-try)
-7. [Architecture Diagram](#-architecture-diagram)
-8. [License](#-license)
+7. [License](#-license)
 
 ---
 
-## 😊 What is This?
+## 😊 What is this tool about?
 
-**Metabase MCP Server** is a backend integration layer that connects your **Metabase** instance with **AI assistants** using the **Model Context Protocol (MCP)**. This allows analysts, product managers, or even executives to interact with business intelligence assets like dashboards and charts using **natural language**—through any MCP-compatible AI client (e.g., Claude Desktop).
+**Metabase MCP Server** is a backend integration layer that connects your **Metabase** instance with **AI assistants** using the **Model Context Protocol (MCP)**. This allows business leaders, product managers and analysts to interact with business intelligence assets like dashboards and charts using **natural language**—through any MCP-compatible AI client (e.g., Claude Desktop).
 
 Instead of navigating through menus or constructing SQL queries manually, you can:
 
-- Generate dashboards and charts dynamically by describing what you want.
-- Modify or delete existing charts and dashboards through chat.
-- Execute SQL queries and retrieve results in real time.
-- Organize dashboards, charts, and collections using structured prompts.
-- Manage user access and database connections effortlessly.
+- You can ask a question and get an instant insight.
+- Generate dashboards and charts by describing what you want.
+- Manage user access and database connections through simple instructions.
 
 This project makes Metabase not just a dashboarding tool—but a conversational, intelligent business assistant.
-
----
-
-## 💡 What Can You Do With It?
-
-1. **Dashboard Automation**  
-   Create, update, delete, and list dashboards via chat.
-
-2. **Chart (Card) Management**  
-   Define visualizations, metrics, and filters through natural language.
-
-3. **Run SQL Queries**  
-   Execute SQL commands like _"Run `SELECT * FROM users LIMIT 5`"_ and retrieve results.
-
-4. **Collections & Organization**  
-   Manage Metabase folders (collections) programmatically.
-
-5. **Database Management**  
-   Configure, update, and remove database connections.
-
-6. **User and Group (Role) Management**  
-   Manage user accounts and roles using natural language instructions.
 
 ---
 
@@ -67,6 +42,12 @@ Make sure the following software is installed and available in your system path:
 -   **Node.js** – Required for running auxiliary MCP components or inspectors. [Download Node.js](https://nodejs.org/)
         
 -   **Any MCP-compatible AI client** – Example: Claude Desktop. [Download Claude Desktop](https://claude.ai/download)
+
+---
+
+## 📐 Architecture Diagram
+
+![Architecture Diagram](./assets/architecture_diagram.png)
 
 ---
 
@@ -265,12 +246,6 @@ Make sure to match the correct format based on your OS to avoid errors.
 - Show all users in the 'Admin' group.
 - Create a new group called 'Finance Analysts'.
 - Connect to a Supabase database and list all tables.
-
----
-
-## 📐 Architecture Diagram
-
-![Architecture Diagram](./assets/architecture_diagram.png)
 
 ---
 
