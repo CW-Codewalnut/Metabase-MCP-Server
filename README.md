@@ -3,16 +3,17 @@
 ## 📚 Table of Contents
 
 1. [What is this tool about?](#-what-is-this-tool-about)
-2. [Required Software](#-required-software)
+2. [Video Walkthrough](#-video-walkthrough)
 3. [Architecture Diagram](#-architecture-diagram)
 4. [Getting Started](#-getting-started)
    - [Set Up Metabase](#1-set-up-metabase-if-you-havent-already)
-   - [Clone or Download the Repository](#2-clone-or-download-the-repository)
-   - [Install uv Package Manager](#3-install-uv-package-manager)
-   - [Create a Virtual Environment](#4-create-a-virtual-environment)
-   - [Install Requirements](#5-install-requirements)
-   - [Configure Your .env](#6-configure-your-env)
-   - [Connect to Your AI Client](#7-connect-to-your-ai-client)
+   - [Install Required Software](#2-install-required-software)
+   - [Clone or Download the Repository](#3-clone-or-download-the-repository)
+   - [Install uv Package Manager](#4-install-uv-package-manager)
+   - [Create a Virtual Environment](#5-create-a-virtual-environment)
+   - [Install Requirements](#6-install-requirements)
+   - [Configure Your .env](#7-configure-your-env)
+   - [Connect to Your AI Client](#8-connect-to-your-ai-client)
 5. [Available Tools](#-available-tools)
 6. [Example Prompts to Try](#-example-prompts-to-try)
 7. [License](#-license)
@@ -33,15 +34,11 @@ This project makes Metabase not just a dashboarding tool—but a conversational,
 
 ---
 
-## 🧰 Required Software
+## 🎥 Video Walkthrough
 
-Make sure the following software is installed and available in your system path:
+Watch this video to see the Metabase MCP Server in action:
 
--   **Python 3.11+** – Required to run the MCP server backend. [Download Python](https://www.python.org/downloads/)
-    
--   **Node.js** – Required for running auxiliary MCP components or inspectors. [Download Node.js](https://nodejs.org/)
-        
--   **Any MCP-compatible AI client** – Example: Claude Desktop. [Download Claude Desktop](https://claude.ai/download)
+[<img src="https://i.ytimg.com/vi/1-86KuNwbdE/maxresdefault.jpg">](https://youtu.be/1-86KuNwbdE?feature=shared")
 
 ---
 
@@ -57,9 +54,17 @@ Make sure the following software is installed and available in your system path:
 
 Follow the official Metabase installation guide: [Metabase Docs](https://www.metabase.com/docs/latest/installation-and-operation/installing-metabase)
 
----
+### 2. Install Required Software
 
-### 2. Clone or Download the Repository
+Make sure the following software is installed and available in your system path:
+
+-   **Python 3.11+** – Required to run the MCP server backend. [Download Python](https://www.python.org/downloads/)
+    
+-   **Node.js** – Required for running auxiliary MCP components or inspectors. [Download Node.js](https://nodejs.org/)
+        
+-   **Any MCP-compatible AI client** – Example: Claude Desktop. [Download Claude Desktop](https://claude.ai/download)
+
+### 3. Clone or Download the Repository
 
 You need to get this tool onto your computer. You can either download it manually or use Git.
 Open your computer's Terminal (Mac) or Command Prompt (Windows).
@@ -89,9 +94,7 @@ cd metabase-mcp-server
 
 ```
 
----
-
-### 3. Install uv Package Manager
+### 4. Install uv Package Manager
 
 Install `uv` using:
 
@@ -99,9 +102,7 @@ Install `uv` using:
 pip install uv
 ```
 
----
-
-### 4. Create a Virtual Environment
+### 5. Create a Virtual Environment
 
 ```bash
 uv venv .venv
@@ -113,17 +114,13 @@ uv venv .venv
 source .venv/bin/activate
 ```
 
----
-
-### 5. Install Requirements
+### 6. Install Requirements
 
 ```bash
 uv pip install -r requirements.txt
 ```
 
----
-
-### 6. Configure Your `.env`
+### 7. Configure Your `.env`
 
 Create a `.env` file and add:
 
@@ -131,9 +128,8 @@ Create a `.env` file and add:
 METABASE_URL=http://127.0.0.1:3000
 METABASE_API_KEY=mb_xxx_your_api_key
 ```
----
 
-### 7. Connect to Your AI Client
+### 8. Connect to Your AI Client
 
 If you are using **Claude Desktop**, you need to modify your `claude_desktop_config.json` file.
 
