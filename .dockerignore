@@ -1,0 +1,34 @@
+# Bytecode
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Distribution / packaging
+*.egg-info/
+dist/
+build/
+
+# Caches
+*.log
+*.sqlite3
+*.db
+.evn
+.venv/
+.cache/
+.mypy_cache/
+.pytest_cache/
+__pypackages__/
+
+# Git
+.git
+.gitignore
+
+# IDE/editor config
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Docker-related
+Dockerfile
+docker-compose.yml
