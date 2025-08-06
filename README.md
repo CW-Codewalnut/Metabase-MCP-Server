@@ -200,7 +200,6 @@ Make sure to match the correct format based on your OS to avoid errors.
 | `get_metabase_cards`          | List all charts                                 |
 | `get_card_query_results`      | Get results from a chart query                  |
 | `create_metabase_card`        | Create a new chart                              |
-| `create_simple_visualization` | Create a simple visualization                  |
 | `update_metabase_card`        | Update an existing chart                        |
 | `delete_metabase_card`        | Delete a chart                                  |
 | **Dashboard Operations** ||

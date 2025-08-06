@@ -1,11 +1,9 @@
-# Metabase MCP Server
-
 import os
 import logging
 import aiohttp
 from yarl import URL
 from dotenv import load_dotenv
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 from enums.request_enum import RequestMethod
 from typing import Dict, Any, Optional, List
 from contextlib import asynccontextmanager
@@ -26,6 +24,19 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger("metabase-mcp")
+
+
+def ensure_dict_response(response: Any) -> Dict[str, Any]:
+    """
+    Ensure the response is a dictionary for FastMCP compatibility.
+    If the response is a list, wrap it in a dictionary with a 'data' key.
+    """
+    if isinstance(response, list):
+        return {"data": response, "count": len(response)}
+    elif isinstance(response, dict):
+        return response
+    else:
+        return {"data": response}
 
 @asynccontextmanager
 async def app_lifespan(server: FastMCP) -> AsyncIterator[None]:
@@ -60,7 +71,6 @@ async def app_lifespan(server: FastMCP) -> AsyncIterator[None]:
 # Initialize FastMCP agent
 mcp = FastMCP("metabase", lifespan=app_lifespan)
 
-@mcp.tool()
 async def make_metabase_request(
     method: RequestMethod,
     endpoint: str,
@@ -98,7 +108,7 @@ async def make_metabase_request(
     try:
         request_headers = headers or {}
         
-        logger.debug(f"Making {method.name} request to {endpoint}")
+        logger.debug(f"Making {method.name} request to {METABASE_URL}{endpoint}")
         
         # Log request payload for debugging (omit sensitive info)
         if json and logger.level <= logging.DEBUG:
@@ -125,14 +135,18 @@ async def make_metabase_request(
                 raise MetabaseResponseError(response.status, f"Server Error: {error_text[:200]}", endpoint)
             
             response.raise_for_status()
-            return await response.json()
+            response_data = await response.json()
+            
+            # Ensure the response is a dictionary for FastMCP compatibility
+            return ensure_dict_response(response_data)
+            
         except aiohttp.ContentTypeError:
             # Handle empty responses or non-JSON responses
             content = await response.text()
             if not content:
-                return {}
-            logger.warning(f"Received non-JSON response: {content[:100]}...")
-            return {"message": content}
+                return {"data": {}}
+            logger.warning(f"Received non-JSON response: {content}")
+            return {"data": content}
 
     except aiohttp.ClientConnectionError as e:
         logger.error(f"Connection error: {str(e)}")
@@ -283,7 +297,7 @@ async def create_metabase_card(
 
         display (str):
             Visualization type. Common values:
-            - "table", "bar", "line", "pie", "area", "number", "scatter", "funnel", "pivot-table", "map"
+            - "table", "bar", "line", "pie", "area", "scatter", "funnel", "pivot-table", "map"
 
         type (str, optional):
             Card type, defaults to "question".
@@ -466,60 +480,6 @@ async def create_metabase_card(
         
     logger.info(f"Creating card '{name}'")
     return await make_metabase_request(RequestMethod.POST, "/api/card", json=payload)
-
-
-@mcp.tool()
-async def create_simple_visualization(
-    name: str,
-    database_id: int,
-    query: str,
-    chart_type: str = "table",
-    x_axis: Optional[str] = None,
-    y_axis: Optional[str] = None,
-    collection_id: Optional[int] = None,
-    description: Optional[str] = None
-) -> Dict[str, Any]:
-    """
-    Create a visualization with simplified settings.
-    
-    Args:
-        name (str): Name of the visualization.
-        database_id (int): Database ID.
-        query (str): SQL query to execute.
-        chart_type (str): Type of chart ('table', 'bar', 'line', 'pie', 'scatter', etc.).
-        x_axis (str, optional): Column to use for X axis.
-        y_axis (str, optional): Column to use for Y axis.
-        collection_id (int, optional): Collection to save to.
-        description (str, optional): Description.
-        
-    Returns:
-        Dict[str, Any]: Created card metadata.
-    """
-    dataset_query = {
-        "type": "native",
-        "native": {"query": query},
-        "database": database_id
-    }
-    
-    # Simplified visualization settings
-    viz_settings = {}
-    
-    if chart_type != "table" and x_axis and y_axis:
-        viz_settings = {
-            "graph.dimensions": [x_axis],
-            "graph.metrics": [y_axis]
-        }
-    
-    logger.info(f"Creating simplified visualization '{name}' of type {chart_type}")
-    return await create_metabase_card(
-        name=name,
-        dataset_query=dataset_query,
-        display=chart_type,
-        visualization_settings=viz_settings,
-        collection_id=collection_id,
-        description=description
-    )
-
 
 @mcp.tool()
 async def update_metabase_card(
