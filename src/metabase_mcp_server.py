@@ -1,6 +1,7 @@
 import os
 import logging
 import aiohttp
+import argparse
 from yarl import URL
 from dotenv import load_dotenv
 from fastmcp import FastMCP
@@ -11,16 +12,80 @@ from collections.abc import AsyncIterator
 from errors.metabase_errors import MetabaseConnectionError, MetabaseResponseError
 from models import DashboardCard, DashboardTab, EmbeddingParams
 
-# Load environment variables
-load_dotenv(override=True)
 
-METABASE_URL = os.getenv("METABASE_URL", "")
-METABASE_API_KEY = os.getenv("METABASE_API_KEY", "")
+def parse_configuration():
+    """
+    Parse configuration from command line arguments and environment variables.
+    Command line arguments take precedence over environment variables.
+    """
+
+    # Load environment variables
+    load_dotenv(override=True)
+    
+    parser = argparse.ArgumentParser(
+        description="Metabase MCP Server",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    
+    # Add configuration arguments
+    parser.add_argument(
+        "--mcp-port", 
+        type=int, 
+        default=os.getenv("MCP_PORT", "3200"),
+        help="MCP server port (default: 3200)"
+    )
+    parser.add_argument(
+        "--metabase-url", 
+        type=str, 
+        default=os.getenv("METABASE_URL", ""),
+        help="Metabase server URL (e.g., http://localhost:3000)"
+    )
+    parser.add_argument(
+        "--metabase-api-key", 
+        type=str, 
+        default=os.getenv("METABASE_API_KEY", ""),
+        help="Metabase API key"
+    )
+    parser.add_argument(
+        "--transport", 
+        type=str, 
+        choices=["stdio", "sse", "streamable-http"],
+        default=os.getenv("TRANSPORT", "streamable-http"),
+        help="Transport method for MCP server"
+    )
+    parser.add_argument(
+        "--log-level", 
+        type=str, 
+        choices=["DEBUG", "INFO", "WARNING", "ERROR"],
+        default=os.getenv("LOG_LEVEL", "DEBUG"),
+        help="Logging level"
+    )
+    
+    # Parse arguments
+    args = parser.parse_args()
+    
+    # Validate required configuration
+    if not args.metabase_url:
+        parser.error("--metabase-url is required (or set METABASE_URL environment variable)")
+    if not args.metabase_api_key:
+        parser.error("--metabase-api-key is required (or set METABASE_API_KEY environment variable)")
+    
+    return args
+
+# Parse configuration
+config = parse_configuration()
+
+# Set configuration variables
+MCP_PORT = config.mcp_port
+METABASE_URL = config.metabase_url
+METABASE_API_KEY = config.metabase_api_key
+TRANSPORT = config.transport
+LOG_LEVEL = getattr(logging, config.log_level.upper())
 
 session: Optional[aiohttp.ClientSession] = None
 
 logging.basicConfig(
-    level=logging.INFO,
+    level=LOG_LEVEL,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger("metabase-mcp")
@@ -69,7 +134,7 @@ async def app_lifespan(server: FastMCP) -> AsyncIterator[None]:
             session = None
 
 # Initialize FastMCP agent
-mcp = FastMCP("metabase", lifespan=app_lifespan)
+mcp = FastMCP("metabase", lifespan=app_lifespan, port=MCP_PORT)
 
 async def make_metabase_request(
     method: RequestMethod,
@@ -1243,6 +1308,12 @@ async def execute_sql_query(
     logger.debug(f"Query: {query[:100]}...")
     return await make_metabase_request(RequestMethod.POST, "/api/dataset", json=query_payload)
 
+
 if __name__ == "__main__":
-    # Start the MCP server on stdio transport
-    mcp.run(transport="stdio")
+    # Start the MCP server with configuration from arguments/environment
+    logger.info(f"Starting Metabase MCP Server on port {MCP_PORT}")
+    logger.info(f"Connecting to Metabase at {METABASE_URL}")
+    logger.info(f"Using transport: {TRANSPORT}")
+    
+    # Start the MCP server
+    mcp.run(transport=TRANSPORT)
