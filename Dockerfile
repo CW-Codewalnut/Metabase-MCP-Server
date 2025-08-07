@@ -1,33 +1,16 @@
-# Stage 1: Builder with Python and dependencies
-FROM python:3.11-slim AS builder
+FROM ghcr.io/astral-sh/uv:debian-slim AS builder
 
-# System deps
-RUN apt-get update && apt-get install -y build-essential curl && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Set workdir
+# Set working directory
 WORKDIR /app
 
-# Install dependencies from pyproject.toml using pip
-COPY pyproject.toml .
-COPY uv.lock .
-COPY README.md .
-RUN pip install --upgrade pip && pip install .
-
-# Copy app source
+# Copy project files
 COPY . .
 
-# Stage 2: Runtime image
-FROM python:3.11-slim
+# Sync dependencies and compile bytecode
+RUN uv sync --compile-bytecode
 
-WORKDIR /app
-
-# Install runtime deps only
-COPY --from=builder /usr/local /usr/local
-COPY --from=builder /app /app
-
-# Expose MCP server port (default)
+# Expose port
 EXPOSE 3200
 
-# Start your MCP server
-CMD ["python", "src/metabase_mcp_server.py"]
+# Run the app
+CMD ["uv", "run", "src/metabase_mcp_server.py", "--host", "0.0.0.0", "--port", "3200"]
