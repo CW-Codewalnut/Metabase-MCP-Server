@@ -12,7 +12,7 @@ build/
 *.log
 *.sqlite3
 *.db
-.evn
+.env
 .venv/
 .cache/
 .mypy_cache/

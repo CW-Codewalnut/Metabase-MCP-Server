@@ -62,7 +62,7 @@ def parse_configuration() -> Configuration:
     parser.add_argument(
         "--metabase-url", 
         type=str, 
-        default=os.getenv("METABASE_URL", ""),
+        default=os.getenv("METABASE_URL", "http://localhost:3000"),
         help="Metabase server URL (e.g., http://localhost:3000)"
     )
     parser.add_argument(
