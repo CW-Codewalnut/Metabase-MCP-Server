@@ -10,13 +10,18 @@ from typing import Dict, Any, Optional, List
 from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
 from errors.metabase_errors import MetabaseConnectionError, MetabaseResponseError
-from models import DashboardCard, DashboardTab, EmbeddingParams
+from models import DashboardCard, DashboardTab, EmbeddingParams, Configuration, TransportType, LogLevelType
 
-
-def parse_configuration():
+def parse_configuration() -> Configuration:
     """
     Parse configuration from command line arguments and environment variables.
     Command line arguments take precedence over environment variables.
+    
+    Returns:
+        Configuration: A type-safe configuration object containing all settings.
+        
+    Raises:
+        SystemExit: If required configuration is missing (via argparse.error).
     """
 
     # Load environment variables
@@ -29,22 +34,16 @@ def parse_configuration():
     
     # Add configuration arguments
     parser.add_argument(
-        "--mcp-port", 
+        "--host", 
+        type=str, 
+        default=os.getenv("HOST", "localhost"),
+        help="MCP server host (default: localhost)"
+    )
+    parser.add_argument(
+        "--port", 
         type=int, 
-        default=os.getenv("MCP_PORT", "3200"),
+        default=os.getenv("PORT", "3200"),
         help="MCP server port (default: 3200)"
-    )
-    parser.add_argument(
-        "--metabase-url", 
-        type=str, 
-        default=os.getenv("METABASE_URL", ""),
-        help="Metabase server URL (e.g., http://localhost:3000)"
-    )
-    parser.add_argument(
-        "--metabase-api-key", 
-        type=str, 
-        default=os.getenv("METABASE_API_KEY", ""),
-        help="Metabase API key"
     )
     parser.add_argument(
         "--transport", 
@@ -60,6 +59,18 @@ def parse_configuration():
         default=os.getenv("LOG_LEVEL", "DEBUG"),
         help="Logging level"
     )
+    parser.add_argument(
+        "--metabase-url", 
+        type=str, 
+        default=os.getenv("METABASE_URL", ""),
+        help="Metabase server URL (e.g., http://localhost:3000)"
+    )
+    parser.add_argument(
+        "--metabase-api-key", 
+        type=str, 
+        default=os.getenv("METABASE_API_KEY", ""),
+        help="Metabase API key"
+    )
     
     # Parse arguments
     args = parser.parse_args()
@@ -70,13 +81,25 @@ def parse_configuration():
     if not args.metabase_api_key:
         parser.error("--metabase-api-key is required (or set METABASE_API_KEY environment variable)")
     
-    return args
+    # Type cast the transport and log_level to ensure they match the Literal types
+    transport: TransportType = args.transport  # type: ignore
+    log_level: LogLevelType = args.log_level  # type: ignore
+    
+    return Configuration(
+        host=args.host,
+        port=args.port,
+        transport=transport,
+        log_level=log_level,
+        metabase_url=args.metabase_url,
+        metabase_api_key=args.metabase_api_key
+    )
 
 # Parse configuration
 config = parse_configuration()
 
 # Set configuration variables
-MCP_PORT = config.mcp_port
+HOST = config.host
+PORT = config.port
 METABASE_URL = config.metabase_url
 METABASE_API_KEY = config.metabase_api_key
 TRANSPORT = config.transport
@@ -134,7 +157,7 @@ async def app_lifespan(server: FastMCP) -> AsyncIterator[None]:
             session = None
 
 # Initialize FastMCP agent
-mcp = FastMCP("metabase", lifespan=app_lifespan, port=MCP_PORT)
+mcp = FastMCP("metabase", lifespan=app_lifespan)
 
 async def make_metabase_request(
     method: RequestMethod,
@@ -1311,9 +1334,9 @@ async def execute_sql_query(
 
 if __name__ == "__main__":
     # Start the MCP server with configuration from arguments/environment
-    logger.info(f"Starting Metabase MCP Server on port {MCP_PORT}")
-    logger.info(f"Connecting to Metabase at {METABASE_URL}")
+    logger.info(f"Starting Metabase MCP Server on {HOST}:{PORT}")
     logger.info(f"Using transport: {TRANSPORT}")
+    logger.info(f"Connecting to Metabase at {METABASE_URL}")
     
     # Start the MCP server
-    mcp.run(transport=TRANSPORT)
+    mcp.run(host=HOST, port=PORT, transport=TRANSPORT)
