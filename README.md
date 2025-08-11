@@ -7,22 +7,25 @@
 3. [Architecture Diagram](#-architecture-diagram)
 4. [Getting Started](#-getting-started)
    - [Set Up Metabase](#1-set-up-metabase-if-you-havent-already)
-   - [Install Required Software](#2-install-required-software)
+   - [Install uv Package Manager](#2-install-uv-package-manager)
    - [Clone or Download the Repository](#3-clone-or-download-the-repository)
-   - [Install uv Package Manager](#4-install-uv-package-manager)
-   - [Create a Virtual Environment](#5-create-a-virtual-environment)
-   - [Install Requirements](#6-install-requirements)
-   - [Configure Your .env](#7-configure-your-env)
-   - [Connect to Your AI Client](#8-connect-to-your-ai-client)
-5. [Available Tools](#-available-tools)
-6. [Example Prompts to Try](#-example-prompts-to-try)
-7. [License](#-license)
+   - [Install dependencies](#4-install-dependencies)
+   - [Configure Your Credentials](#5-configure-your-credentials)
+   - [Connect to Your MCP client](#6-connect-to-your-mcp-client)
+5. [Configuration Options](#-configuration-options)
+6. [Getting Your Metabase API Key](#-getting-your-metabase-api-key)
+7. [Remote Deployment](#-remote-deployment)
+8. [Debugging with MCP Inspector](#-debugging-with-mcp-inspector)
+9. [Available Tools](#-available-tools)
+10. [Example Prompts to Try](#-example-prompts-to-try)
+11. [Connect with Us](#-connect-with-us)
+12. [License](#-license)
 
 ---
 
 ## 😊 What is this tool about?
 
-**Metabase MCP Server** is a backend integration layer that connects your **Metabase** instance with **AI assistants** using the **Model Context Protocol (MCP)**. This allows business leaders, product managers and analysts to interact with business intelligence assets like dashboards and charts using **natural language**—through any MCP-compatible AI client (e.g., Claude Desktop).
+**Metabase MCP Server** is a backend integration layer that connects your **Metabase** instance with **AI assistants** using the **Model Context Protocol (MCP)**. This allows business leaders, product managers and analysts to interact with business intelligence assets like dashboards and charts using **natural language**—through any MCP client (e.g., Claude Desktop).
 
 Instead of navigating through menus or constructing SQL queries manually, you can:
 
@@ -54,15 +57,32 @@ Watch this video to see the Metabase MCP Server in action:
 
 Follow the official Metabase installation guide: [Metabase Docs](https://www.metabase.com/docs/latest/installation-and-operation/installing-metabase)
 
-### 2. Install Required Software
+### 2. Install uv Package Manager
 
-Make sure the following software is installed and available in your system path:
+Install `uv` which includes Python and package management:
 
--   **Python 3.11+** – Required to run the MCP server backend. [Download Python](https://www.python.org/downloads/)
-    
--   **Node.js** – Required for running auxiliary MCP components or inspectors. [Download Node.js](https://nodejs.org/)
-        
--   **Any MCP-compatible AI client** – Example: Claude Desktop. [Download Claude Desktop](https://claude.ai/download)
+**Windows:**
+```bash
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+**macOS/Linux:**
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+Or install via package managers:
+```bash
+# macOS
+brew install uv
+
+# Windows (via Scoop)
+scoop install uv
+
+# Windows (via Chocolatey)
+choco install uv
+```
+For more information about uv installation and usage, please visit the official documentation: [https://docs.astral.sh/uv/getting-started/installation/](https://docs.astral.sh/uv/getting-started/installation/)
 
 ### 3. Clone or Download the Repository
 
@@ -94,96 +114,319 @@ cd metabase-mcp-server
 
 ```
 
-### 4. Install uv Package Manager
+### 4. Install dependencies
 
-Install `uv` using:
+This command will automatically:
+- Install the required Python version (if not already available)
+- Create a virtual environment for the project
+- Install all necessary packages and dependencies
 
-```bash
-pip install uv
-```
-
-### 5. Create a Virtual Environment
 
 ```bash
-uv venv .venv
-
-# Windows
-.venv\Scripts\activate
-
-# macOS/Linux
-source .venv/bin/activate
+uv sync
 ```
+### 5. Configure Your Credentials
 
-### 6. Install Requirements
+You have three options to configure your Metabase credentials for the MCP Server:
 
-```bash
-uv pip install -r requirements.txt
-```
-
-### 7. Configure Your `.env`
-
-Create a `.env` file and add:
-
+**Option 1: Using a `.env` file (Recommended)**
+Create a `.env` file in the project root:
 ```env
-METABASE_URL=http://127.0.0.1:3000
-METABASE_API_KEY=mb_xxx_your_api_key
+METABASE_URL=http://localhost:3000
+METABASE_API_KEY=mb_xxx_your_key
+PORT=3200
+HOST=localhost
+TRANSPORT=streamable-http
+LOG_LEVEL=DEBUG
 ```
 
-### 8. Connect to Your AI Client
-
-If you are using **Claude Desktop**, you need to modify your `claude_desktop_config.json` file.
-
-##### Windows Path:
-```plaintext
-C:\Users\<YOUR_USERNAME>\AppData\Roaming\Claude\claude_desktop_config.json
+**Option 2: Using command-line arguments**
+Pass configuration directly via command line:
+```bash
+ uv run src/metabase_mcp_server.py --metabase-url http://localhost:3000 --metabase-api-key "YOUR_API_KEY" --port 3200 --host localhost --transport streamable-http --log-level DEBUG
 ```
 
-##### macOS Path:
-```plaintext
-~/Library/Application Support/Claude/claude_desktop_config.json
-```
-
-Inside the config file, add:
+**Option 3: Using environment variables in MCP client config**
+Configure directly in your MCP client without a `.env` file (see examples below).
 
 ```json
 {
   "mcpServers": {
     "metabase": {
-      "command": "FULL_PATH\\metabase-mcp-server\\.venv\\Scripts\\python.exe",
-      "args": ["FULL_PATH\\metabase-mcp-server\\src\\metabase_mcp_server.py"]
+      "type": "stdio"
+      .
+      .
+      .
+      "env": {
+        METABASE_URL=http://localhost:3000
+        METABASE_API_KEY=mb_xxx_your_key
+        PORT=3200
+        HOST=localhost
+        TRANSPORT=streamable-http
+        LOG_LEVEL=DEBUG
+      }
+    }
+  }
+}
+```
+### 6. Connect to Your MCP client
+
+Choose your preferred MCP clients like Claude Desktop app, Claude Code, Cursor, Windsurf etc., and add the Metabase MCP server in their respective configuration files. All MCP clients follow a similar configuration pattern.
+
+#### Configuration Examples
+
+**For stdio transport (recommended for local MCP server):**
+
+Windows:
+```json
+{
+  "mcpServers": {
+    "metabase": {
+      "type": "stdio",
+      "command": "uv",
+      "args": ["run", "C:\\Users\\YourName\\Projects\\metabase-mcp-server\\src\\metabase_mcp_server.py""]
     }
   }
 }
 ```
 
-
-#### Important Notes
-
-- Replace `FULL_PATH` with the actual location of your project directory.
-- After saving the changes, **restart Claude Desktop** to apply the new configuration.
-
- - The `command` and `args` paths depend on your operating system.
-
-**Windows Example:**
+Mac:
 ```json
-"command": "FULL_PATH\\metabase-mcp-server\\.venv\\Scripts\\python.exe",
-"args": ["FULL_PATH\\metabase-mcp-server\\src\\metabase_mcp_server.py"]
+{
+  "mcpServers": {
+    "metabase": {
+      "type": "stdio",
+      "command": "uv",
+      "args": ["run", "/Users/YourName/Projects/metabase-mcp-server/src/metabase_mcp_server.py"]
+    }
+  }
+}
 ```
 
-**macOS/Linux Example:**
+##### Key Differences:
+- Windows uses **backslashes** `\\` in paths
+- macOS/Linux uses **forward slashes** `/` in paths
+- Make sure to match the correct format based on your OS to avoid errors
+
+
+##### Important Notes:
+- Replace `FULL_PATH` with the actual absolute path to your project directory
+- After saving configuration changes, **restart your MCP client** to apply the new settings
+- For project-specific tools in Cursor, create a `.cursor/mcp.json` file in your project directory
+- For global tools in Cursor, create a `~/.cursor/mcp.json` file in your home directory
+
+**For streamable-http transport (recommended for remote MCP server):**
 ```json
-"command": "FULL_PATH/metabase-mcp-server/.venv/bin/python",
-"args": ["FULL_PATH/metabase-mcp-server/src/metabase_mcp_server.py"]
+{
+  "mcpServers": {
+    "metabase": {
+      "type": "streamable-http",
+      "url": "http://localhost:3200/mcp/"
+    }
+  }
+}
 ```
 
-**Key Differences:**
-- Windows uses **backslashes** `\\` and `.exe` files.
-- macOS/Linux uses **forward slashes** `/` and no `.exe`.
+#### Compatible MCP clients
 
-Make sure to match the correct format based on your OS to avoid errors.
+Click on any client to visit their official MCP setup documentation:
 
-> **Note:**  
-> For other AI clients, configure them similarly by setting the correct `command` to your Python executable and `args` to your MCP Server script path, based on your operating system.
+| Client | Official MCP Documentation |
+|--------|----------------------------|
+| [![Claude Desktop](https://img.shields.io/badge/Claude-Desktop-orange?style=for-the-badge&logo=anthropic)](https://support.anthropic.com/en/articles/10949351-getting-started-with-model-context-protocol-mcp-on-claude-for-desktop) | Anthropic's official MCP guide for Claude Desktop |
+| [![Claude Code](https://img.shields.io/badge/Claude-Code-orange?style=for-the-badge&logo=anthropic)](https://docs.anthropic.com/en/docs/claude-code/mcp) | Official Claude Code MCP setup documentation |
+| [![Cursor](https://img.shields.io/badge/Cursor-AI_Code_Editor-blue?style=for-the-badge&logo=cursor)](https://docs.cursor.com/context/model-context-protocol#configuring-mcp-servers) | Cursor's official MCP configuration guide |
+| [![Windsurf](https://img.shields.io/badge/Windsurf-Codeium-green?style=for-the-badge&logo=codeium)](https://docs.windsurf.com/windsurf/mcp) | Windsurf official MCP setup documentation |
+| [![Cline](https://img.shields.io/badge/Cline-VS_Code_Extension-purple?style=for-the-badge&logo=visualstudiocode)](https://docs.cline.bot/mcp-servers/mcp-quickstart) | Cline's official MCP quickstart guide |
+| [![VS Code](https://img.shields.io/badge/VS_Code-Copilot-blue?style=for-the-badge&logo=visualstudiocode)](https://code.visualstudio.com/docs/copilot/chat/mcp-servers#_add-an-mcp-server-to-your-workspace) | VS Code Copilot MCP server configuration |
+
+
+Once you have added the configuration, the MCP server should be visible in your MCP client.
+
+---
+
+## 🔧 Configuration Options
+
+The Metabase MCP Server supports flexible configuration through environment variables, command-line arguments, or a combination of both.
+
+### Environment Variables
+
+| Variable | Description | Default Value | Example |
+|----------|-------------|---------------|---------|
+| `METABASE_URL` | Your Metabase instance URL | Required | `http://127.0.0.1:3000` |
+| `METABASE_API_KEY` | Your Metabase API key | Required | `mb_xxx_your_api_key` |
+| `TRANSPORT` | Transport protocol | `streamable-http` | `stdio`, `streamable-http` |
+| `HOST` | Host for HTTP transports | `localhost` | `0.0.0.0`, `127.0.0.1` |
+| `PORT` | Port for HTTP transports | `3200` | `8080`, `9000` |
+| `LOG_LEVEL` | Logging level | `INFO` | `DEBUG`, `WARNING`, `ERROR` |
+
+### Command-line Arguments
+
+| Argument | Description | Default Value |
+|----------|-------------|---------------|
+| `--metabase-url` | Metabase instance URL | Required |
+| `--metabase-api-key` | Metabase API key | Required |
+| `--transport` | Transport protocol | `streamable-http` |
+| `--host` | Host for HTTP transports | `localhost` |
+| `--port` | Port for HTTP transports | `3200` |
+| `--log-level` | Logging verbosity level | `INFO` |
+
+### Transport Protocols
+
+| Protocol | Description | Use Case |
+|----------|-------------|----------|
+| **stdio** | Standard input/output communication | Best for local integrations (Claude Desktop, Cursor, etc.) |
+| **streamable-http** | HTTP-based streaming protocol | Ideal for remote deployments and web-based integrations |
+| **sse** | Server-Sent Events over HTTP | ⚠️ **Deprecated - Not recommended for new setups** |
+
+### Configuration Priority
+
+Configuration values are applied in the following priority order (highest to lowest):
+1. **Command-line arguments** (overrides everything)
+2. **Environment variables** (overrides defaults)
+3. **Default values**
+
+### Complete Command Examples
+
+```bash
+uv run src/metabase_mcp_server.py --transport streamable-http --host localhost --port 3200 --metabase-url http://127.0.0.1:3000 --metabase-api-key mb_xxx_your_key
+
+```
+
+**Note:** You don't need to pass every parameter when running the server. However, you must provide the Metabase URL and API key. Any parameters not specified will use their default values as shown above.
+
+---
+
+
+## 🔑 Getting Your Metabase API Key
+
+To get your Metabase API key:
+
+1. **Log into your Metabase instance**
+2. **Click on your profile picture** (top-right corner)
+3. **Select "Account settings"**
+4. **Navigate to the "API Keys" tab**
+5. **Click "Create API Key"**
+6. **Give your key a descriptive name** (e.g., "MCP Server Key")
+7. **Copy the generated key** (starts with `mb_`)
+
+⚠️ **Important:** Store your API key securely and never commit it to version control. The key provides full access to your Metabase instance.
+
+---
+
+## 🚀 Remote Deployment
+
+For production use or team collaboration, you can deploy the Metabase MCP Server remotely. We use this approach internally at Codewalnut.
+
+
+### Docker Deployment
+
+We've included Docker configuration files to make remote deployment straightforward.
+
+#### Quick Start with Docker
+```bash
+# Build the Docker image
+docker build -t metabase-mcp-server .
+
+# Run with environment variables
+docker run -d \
+  -p 3200:3200 \
+  -e METABASE_URL="http://your-metabase-instance.com" \
+  -e METABASE_API_KEY="mb_xxx_your_api_key" \
+  metabase-mcp-server
+```
+
+#### Docker Compose (Recommended)
+```yaml
+version: '3.8'
+services:
+  metabase-mcp:
+    build: .
+    ports:
+      - "3200:3200"
+    environment:
+      - METABASE_URL=http://your-metabase-instance.com
+      - METABASE_API_KEY=mb_xxx_your_api_key
+      ##- PORT=3200
+      ##- HOST=localhost
+      ##- TRANSPORT=streamable-http
+      ##- LOG_LEVEL=DEBUG
+    restart: unless-stopped
+```
+
+#### Connecting to Remote MCP Server
+
+Once deployed, configure your MCP clients to connect to the remote server:
+
+```json
+{
+  "mcpServers": {
+    "metabase": {
+      "type": "streamable-http",
+      "url": "http://server-ip:3200/mcp/"
+    }
+  }
+}
+```
+
+### Deployment Options
+- **Cloud Providers:** AWS ECS, Google Cloud Run, Azure Container Instances
+- **VPS/Dedicated Servers:** DigitalOcean, Linode, Vultr
+- **Container Platforms:** Kubernetes, Docker Swarm
+- **Platform-as-a-Service:** Railway, Render, Fly.io
+
+### Security Considerations
+- Use HTTPS in production environments
+- Implement proper firewall rules
+- Consider VPN access for sensitive business data
+- Regularly rotate API keys
+- Monitor access logs
+
+### Need Help with Deployment?
+Our team at CodeWalnut offers deployment and consulting services. [Contact us](#-connect-with-us) for enterprise-grade setup and support.
+
+---
+
+## 🔍 Debugging with MCP Inspector
+
+To debug and test your Metabase MCP Server setup, you can use the official MCP Inspector tool.
+
+### Prerequisites
+First, install Node.js if you haven't already:
+- **Download from:** [nodejs.org](https://nodejs.org/en/download)
+- **Or install via package manager:**
+  ```bash
+  # macOS
+  brew install node
+  
+  # Windows (via Chocolatey)
+  choco install nodejs
+  
+  # Windows (via Scoop)
+  scoop install nodejs
+  ```
+
+### Install and Run MCP Inspector
+```bash
+# Install MCP Inspector globally
+npm install -g @modelcontextprotocol/inspector
+
+# Run the inspector with your Metabase MCP Server
+npx @modelcontextprotocol/inspector uv run FULL_PATH/metabase-mcp-server/src/metabase_mcp_server.py
+```
+
+### Using MCP Inspector
+The MCP Inspector provides:
+- **Real-time tool testing** - Execute MCP tools directly from the web interface
+- **Request/Response monitoring** - See exactly what data is being sent and received
+- **Error debugging** - Identify configuration or API issues quickly
+- **Schema validation** - Verify that your tools are properly defined
+
+Once running, open your browser to `http://localhost:5173` to access the inspector interface.
+
+### Common Debugging Scenarios
+- **Connection issues** - Verify your Metabase URL and API key
+- **Permission errors** - Check if your API key has the required permissions
 
 ---
 
@@ -241,6 +484,37 @@ Make sure to match the correct format based on your OS to avoid errors.
 - Show all users in the 'Admin' group.
 - Create a new group called 'Finance Analysts'.
 - Connect to a Supabase database and list all tables.
+
+
+---
+
+## 🌐 Connect with Us
+
+Stay connected and get support through our community channels:
+
+### 🏢 Official Links
+- **🌍 Website:** [codewalnut.com](https://codewalnut.com)
+- **📧 Email:** [nattu@codewalnut.com](mailto:nattu@codewalnut.com)
+- **📖 Blogs:**
+  - **insights:** [codewalnut.com/insights](https://www.codewalnut.com/insights)
+  - **learn:** [codewalnut.com/learn](https://www.codewalnut.com/learn)
+
+### 📱 Social Media
+- **💼 LinkedIn:** [CodeWalnut](https://www.linkedin.com/company/codewalnut)
+- **📺 YouTube:** [CodeWalnut Channel](https://www.youtube.com/@CodeWalnut)
+- **🐦 Twitter/X:** [@codewalnut](https://x.com/codewalnut)
+- **📷 Instagram:** [@codewalnut](https://www.instagram.com/teamwalnut_)
+
+### 💬 Community Support
+- **📧 Newsletter:** [Subscribe to CodeWalnut Newsletter](https://codewalnut.com/) (scroll down to find the email subscription option)
+- **🐙 GitHub:** [codewalnut](https://github.com/CW-Codewalnut)
+
+### 🤝 Professional Services
+- **Consulting:** Custom Metabase integrations and AI solutions
+- **Training:** MCP and business intelligence workshops
+- **Support:** Enterprise-grade support and maintenance
+
+📢 **Follow us for updates on new MCP servers, AI integrations, and business intelligence tools!**
 
 ---
 
