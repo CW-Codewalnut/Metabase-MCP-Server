@@ -156,9 +156,8 @@ Configure directly in your MCP client without a `.env` file (see examples below)
   "mcpServers": {
     "metabase": {
       "type": "stdio"
-      .
-      .
-      .
+      "command": "uv",
+      "args": ["run", "C:\\Users\\YourName\\Projects\\metabase-mcp-server\\src\\metabase_mcp_server.py"],
       "env": {
         METABASE_URL=http://localhost:3000
         METABASE_API_KEY=mb_xxx_your_key
