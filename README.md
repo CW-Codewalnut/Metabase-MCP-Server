@@ -14,12 +14,14 @@
    - [Connect to Your MCP client](#6-connect-to-your-mcp-client)
 5. [Configuration Options](#-configuration-options)
 6. [Getting Your Metabase API Key](#-getting-your-metabase-api-key)
-7. [Remote Deployment](#-remote-deployment)
-8. [Debugging with MCP Inspector](#-debugging-with-mcp-inspector)
-9. [Available Tools](#-available-tools)
-10. [Example Prompts to Try](#-example-prompts-to-try)
-11. [Connect with Us](#-connect-with-us)
-12. [License](#-license)
+7. [DXT File Support](#-dxt-file-support)
+8. [How to Create Your Own DXT File](#how-to-create-your-own-dxt-file)
+9. [Remote Deployment](#-remote-deployment)
+10. [Debugging with MCP Inspector](#-debugging-with-mcp-inspector)
+11. [Available Tools](#-available-tools)
+12. [Example Prompts to Try](#-example-prompts-to-try)
+13. [Connect with Us](#-connect-with-us)
+14. [License](#-license)
 
 ---
 
@@ -313,6 +315,40 @@ To get your Metabase API key:
 ⚠️ **Important:** Store your API key securely and never commit it to version control. The key provides full access to your Metabase instance.
 
 ---
+
+## 📂 DXT File Support
+
+You no longer need to go through the steps of cloning the repository and setting up the environment. Simply follow the steps below to install the **Metabase MCP Server** in your **Cloude Desktop App**:
+
+1. **Download the DXT File**  
+   Check the link below to download the latest **DXT file** directly:  
+   [Download DXT File](./metabase-mcp-server.dxt)
+
+2. **Open the Cloude Desktop App**  
+   Once you have the file, open the **Cloude Desktop App** on your system.
+
+3. **Navigate to Extensions Settings**  
+   In the **Cloude Desktop App**:  
+   - Go to **Files** → **Settings** → **Extensions**  
+   - Then click on **Advanced Settings**.
+
+4. **Select the DXT File**  
+   In the **Advanced Settings** section, click on **Choose File**, select the downloaded **DXT file**.
+
+5. **Enter the Required Details**  
+   After slecting the **DXT file**, a prompt will appear asking you to fill in the required details:  
+   - **Metabase URL**: Enter your Metabase server URL.  
+   - **API Key**: Add the relevant API key for authentication.
+
+6. **Complete the Setup**  
+   After entering the necessary details, click **Save** to apply the configuration.
+
+That's it! The **Metabase MCP Server** is now installed and ready to use in your **Cloude Desktop App**.
+
+## How to Create Your Own DXT File
+
+If you want to create your own **DXT file**, please visit the Official Guide:  
+[Creating Your Own DXT File](https://www.anthropic.com/engineering/desktop-extensions)
 
 ## 🚀 Remote Deployment
 
