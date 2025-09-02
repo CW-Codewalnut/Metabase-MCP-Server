@@ -1,0 +1,54 @@
+{
+  "dxt_version": "0.1",
+  "name": "metabase-mcp-server.codewalnut.com",
+  "display_name": "Metabase",
+  "version": "0.1.0",
+  "description": "A Metabase MCP (Model Context Protocol) server for integrating Metabase with AI assistants",
+  "author": {
+    "name": "Ranjan Bhagat",
+    "email": "ranjan@codewalnut.com",
+    "url": "https://www.ranjanbhagat.com"
+  },
+  "homepage": "https://www.codewalnut.com",
+  "documentation": "https://github.com/CW-Codewalnut/metabase-mcp-server",
+  "support": "https://www.codewalnut.com/contact-us",
+  "icon": "${__dirname}\\assets\\metabase-logo.png",
+  "server": {
+    "type": "python",
+    "entry_point": "src\\metabase_mcp_server.py",
+    "mcp_config": {
+      "command": "${__dirname}\\.venv\\Scripts\\python.exe",
+      "args": [
+        "${__dirname}\\src\\metabase_mcp_server.py"
+      ],
+      "env": {
+        "METABASE_URL": "${user_config.METABASE_URL}",
+        "METABASE_API_KEY": "${user_config.METABASE_API_KEY}"
+      }
+    }
+  },
+  "user_config": {
+    "METABASE_URL": {
+      "type": "string",
+      "title": "Metabase URL",
+      "description": "Base URL of your Metabase instance (no trailing slash). Examples: http://localhost:3000 or https://<workspace>.metabaseapp.com. Must be reachable from this machine.",
+      "required": true,
+      "sensitive": false
+    },
+    "METABASE_API_KEY": {
+      "type": "string",
+      "title": "Metabase API Key",
+      "description": "Metabse API key often starts with “mb_…”",
+      "required": false,
+      "sensitive": true
+    }
+  },
+  "keywords": [
+    "metabase"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CW-Codewalnut/metabase-mcp-server"
+  }
+}

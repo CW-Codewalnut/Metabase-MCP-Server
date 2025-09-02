@@ -49,7 +49,7 @@ def parse_configuration() -> Configuration:
         "--transport", 
         type=str, 
         choices=["stdio", "sse", "streamable-http"],
-        default=os.getenv("TRANSPORT", "streamable-http"),
+        default=os.getenv("TRANSPORT", "stdio"),
         help="Transport method for MCP server"
     )
     parser.add_argument(
@@ -1339,4 +1339,7 @@ if __name__ == "__main__":
     logger.info(f"Connecting to Metabase at {METABASE_URL}")
     
     # Start the MCP server
-    mcp.run(host=HOST, port=PORT, transport=TRANSPORT)
+    if(TRANSPORT == "stdio"):
+        mcp.run(transport=TRANSPORT)
+    else:
+        mcp.run(host=HOST, port=PORT, transport=TRANSPORT) 

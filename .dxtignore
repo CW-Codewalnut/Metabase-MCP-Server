@@ -1,0 +1,21 @@
+# Ignore Python caches
+__pycache__/
+*.pyc
+
+
+# Ignore editor/OS junk
+.DS_Store
+Thumbs.db
+
+# Ignore local test files
+tests/
+
+
+assets/architecture_diagram.png
+
+.gitignore
+
+.dockerignore
+Dockerfile
+
+README.md
