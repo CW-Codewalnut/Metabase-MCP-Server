@@ -6,7 +6,7 @@ from yarl import URL
 from dotenv import load_dotenv
 from fastmcp import FastMCP
 from enums.request_enum import RequestMethod
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Union
 from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
 from errors.metabase_errors import MetabaseConnectionError, MetabaseResponseError
@@ -352,7 +352,7 @@ async def create_metabase_card(
     dataset_query: Dict[str, Any],
     display: str,
     type: str = "question",
-    visualization_settings: Optional[Dict[str, Any]] = None,
+    visualization_settings: Optional[Union[Dict[str, Any], str]] = None,
     collection_id: Optional[int] = None,
     description: Optional[str] = None,
     parameter_mappings: Optional[List] = None,
@@ -576,7 +576,7 @@ async def update_metabase_card(
     dataset_query: Optional[Dict[str, Any]] = None,
     display: Optional[str] = None,
     type: Optional[str] = None,
-    visualization_settings: Optional[Dict[str, Any]] = None,
+    visualization_settings: Optional[Union[Dict[str, Any], str]] = None,
     collection_id: Optional[int] = None,
     description: Optional[str] = None,
     parameter_mappings: Optional[List] = None,
@@ -622,7 +622,16 @@ async def update_metabase_card(
     if type is not None:
         payload["type"] = type
     if visualization_settings is not None:
+        if isinstance(visualization_settings, str):
+            try:
+                import json
+                visualization_settings = json.loads(visualization_settings)
+            except json.JSONDecodeError:
+                logger.error("Invalid JSON in visualization_settings")
+                raise ValueError("visualization_settings must be a valid JSON object")
         payload["visualization_settings"] = visualization_settings
+    else:
+        payload["visualization_settings"] = {}
     if collection_id is not None:
         payload["collection_id"] = collection_id
     if description is not None:
