@@ -6,7 +6,7 @@ from yarl import URL
 from dotenv import load_dotenv
 from fastmcp import FastMCP
 from enums.request_enum import RequestMethod
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Literal, Optional, List
 from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
 from errors.metabase_errors import MetabaseConnectionError, MetabaseResponseError
@@ -157,7 +157,42 @@ async def app_lifespan(server: FastMCP) -> AsyncIterator[None]:
             session = None
 
 # Initialize FastMCP agent
-mcp = FastMCP("metabase", lifespan=app_lifespan)
+mcp = FastMCP(
+    "metabase",
+    instructions=(
+        "Metabase BI platform server — query data, manage dashboards, cards, and collections.\n\n"
+        "CRITICAL RULES:\n"
+        "1. Multi-tab dashboards: ALWAYS include 'dashboard_tab_id' on every dashcard. "
+        "Omitting it will place cards on the wrong tab or cause errors.\n"
+        "2. Updating dashboards: ALWAYS call get_dashboard_by_id first to get existing dashcards, "
+        "then include ALL existing dashcards plus your changes in the update payload. "
+        "Sending only new dashcards will DELETE all existing ones.\n"
+        "3. New dashcards: Use negative IDs (e.g., -1, -2, -3) for new dashcards when updating a dashboard.\n"
+        "4. Dashboard grid: 24 columns wide. Cards use col (0-23), row, size_x, size_y for positioning.\n"
+        "5. Card creation: Always provide 'dataset_query' with 'database' ID and either "
+        "'native' (for SQL) or 'query' (for MBQL) structure.\n"
+        "6. Prefer composite tools (add_card_to_dashboard_safe, get_dashboard_overview, "
+        "run_sql_and_save_as_card) over manual multi-step sequences when available."
+    ),
+    lifespan=app_lifespan,
+)
+
+
+def _get_error_recovery_hint(status: int, endpoint: str) -> str:
+    """Return an actionable recovery hint based on HTTP status and endpoint."""
+    hints = {
+        400: (
+            "Check required fields and parameter types. "
+            "For cards: ensure 'dataset_query' has 'database', 'type', and query structure. "
+            "For dashboards: ensure all dashcards have 'dashboard_tab_id' for multi-tab dashboards."
+        ),
+        401: "API key is invalid or expired. Check METABASE_API_KEY configuration.",
+        403: "Insufficient permissions for this operation. Verify API key has the required access level.",
+        404: f"Resource not found at {endpoint}. Verify the ID exists — use search_metabase or a list tool to find valid IDs.",
+        409: "Conflict — the resource may have been modified by another request. Fetch the latest version and retry.",
+        422: "Validation failed. Check that all field values are valid for this resource type.",
+    }
+    return hints.get(status, f"Unexpected error ({status}). Check endpoint and parameters.")
 
 async def make_metabase_request(
     method: RequestMethod,
@@ -220,14 +255,19 @@ async def make_metabase_request(
             if response.status >= 500:
                 error_text = await response.text()
                 logger.error(f"Server error {response.status}: {error_text[:200]}")
-                raise MetabaseResponseError(response.status, f"Server Error: {error_text[:200]}", endpoint)
-            
+                raise MetabaseResponseError(
+                    response.status,
+                    f"Metabase server error on {method.name} {endpoint}: {error_text[:200]}. "
+                    "This is a Metabase internal error — retry the request or check Metabase server logs.",
+                    endpoint,
+                )
+
             response.raise_for_status()
             response_data = await response.json()
-            
+
             # Ensure the response is a dictionary for FastMCP compatibility
             return ensure_dict_response(response_data)
-            
+
         except aiohttp.ContentTypeError:
             # Handle empty responses or non-JSON responses
             content = await response.text()
@@ -238,10 +278,18 @@ async def make_metabase_request(
 
     except aiohttp.ClientConnectionError as e:
         logger.error(f"Connection error: {str(e)}")
-        raise MetabaseConnectionError("Metabase is unreachable. Is the Metabase server running?") from e
+        raise MetabaseConnectionError(
+            "Metabase server is unreachable. Check that the Metabase instance is running "
+            "and the METABASE_URL is correct."
+        ) from e
     except aiohttp.ClientResponseError as e:
         logger.error(f"Response error: {e.status}, {e.message}, {e.request_info.url}")
-        raise MetabaseResponseError(e.status, e.message, str(e.request_info.url)) from e
+        recovery = _get_error_recovery_hint(e.status, endpoint)
+        raise MetabaseResponseError(
+            e.status,
+            f"{method.name} {endpoint} failed ({e.status}): {e.message}. {recovery}",
+            str(e.request_info.url),
+        ) from e
     except Exception as e:
         logger.error(f"Request error: {str(e)}")
         raise RuntimeError(f"Request error: {str(e)}") from e
@@ -350,8 +398,12 @@ async def get_card_query_results(card_id: int) -> Dict[str, Any]:
 async def create_metabase_card(
     name: str,
     dataset_query: Dict[str, Any],
-    display: str,
-    type: str = "question",
+    display: Literal[
+        "table", "bar", "line", "area", "pie", "scalar", "row",
+        "funnel", "scatter", "waterfall", "combo", "pivot",
+        "progress", "gauge", "smartscalar", "map",
+    ] = "table",
+    type: Literal["question", "metric", "model"] = "question",
     visualization_settings: Optional[Dict[str, Any]] = None,
     collection_id: Optional[int] = None,
     description: Optional[str] = None,
@@ -574,8 +626,12 @@ async def update_metabase_card(
     card_id: int,
     name: Optional[str] = None,
     dataset_query: Optional[Dict[str, Any]] = None,
-    display: Optional[str] = None,
-    type: Optional[str] = None,
+    display: Optional[Literal[
+        "table", "bar", "line", "area", "pie", "scalar", "row",
+        "funnel", "scatter", "waterfall", "combo", "pivot",
+        "progress", "gauge", "smartscalar", "map",
+    ]] = None,
+    type: Optional[Literal["question", "metric", "model"]] = None,
     visualization_settings: Optional[Dict[str, Any]] = None,
     collection_id: Optional[int] = None,
     description: Optional[str] = None,
@@ -1012,7 +1068,11 @@ async def get_metabase_databases() -> Dict[str, Any]:
 @mcp.tool()
 async def create_metabase_database(
     name: str,
-    engine: str,
+    engine: Literal[
+        "postgres", "mysql", "bigquery-cloud-sdk", "redshift", "snowflake",
+        "sqlserver", "mongo", "sqlite", "h2", "presto-jdbc", "sparksql",
+        "oracle", "clickhouse", "druid", "googleanalytics", "starburst",
+    ],
     details: Dict[str, Any],
     auto_run_queries: Optional[bool] = None,
     cache_ttl: Optional[int] = None,
@@ -1330,6 +1390,280 @@ async def execute_sql_query(
     logger.info(f"Executing SQL query on database {database_id}")
     logger.debug(f"Query: {query[:100]}...")
     return await make_metabase_request(RequestMethod.POST, "/api/dataset", json=query_payload)
+
+
+# --- Composite / Outcome-Oriented Tools ---
+
+@mcp.tool()
+async def get_dashboard_overview(dashboard_id: int) -> Dict[str, Any]:
+    """
+    Get a concise summary of a dashboard: tabs, card count per tab, card names,
+    types, and grid positions. Much lighter than the full dashboard response.
+
+    Use this FIRST to understand a dashboard's structure before making changes.
+
+    Args:
+        dashboard_id (int): ID of the dashboard.
+
+    Returns:
+        Dict with: id, name, tabs (list with id, name, card_count),
+        and cards (list with id, name, display, tab_id, position).
+    """
+    dashboard = await make_metabase_request(
+        RequestMethod.GET, f"/api/dashboard/{dashboard_id}"
+    )
+
+    tabs = []
+    for tab in dashboard.get("tabs", []):
+        tab_id = tab.get("id")
+        tab_cards = [
+            dc for dc in dashboard.get("dashcards", [])
+            if dc.get("dashboard_tab_id") == tab_id
+        ]
+        tabs.append({
+            "id": tab_id,
+            "name": tab.get("name", ""),
+            "card_count": len(tab_cards),
+        })
+
+    cards = []
+    for dc in dashboard.get("dashcards", []):
+        card_info = dc.get("card", {}) or {}
+        cards.append({
+            "dashcard_id": dc.get("id"),
+            "card_id": card_info.get("id"),
+            "name": card_info.get("name", dc.get("visualization_settings", {}).get("text", "(virtual card)")),
+            "display": card_info.get("display", dc.get("visualization_settings", {}).get("virtual_card", {}).get("display", "unknown")),
+            "tab_id": dc.get("dashboard_tab_id"),
+            "col": dc.get("col"),
+            "row": dc.get("row"),
+            "size_x": dc.get("size_x"),
+            "size_y": dc.get("size_y"),
+        })
+
+    return {
+        "id": dashboard.get("id"),
+        "name": dashboard.get("name"),
+        "description": dashboard.get("description"),
+        "collection_id": dashboard.get("collection_id"),
+        "tab_count": len(tabs),
+        "total_cards": len(cards),
+        "tabs": tabs,
+        "cards": cards,
+    }
+
+
+@mcp.tool()
+async def add_card_to_dashboard_safe(
+    dashboard_id: int,
+    card_id: int,
+    tab_id: int,
+    col: int = 0,
+    row: int = -1,
+    size_x: int = 6,
+    size_y: int = 4,
+) -> Dict[str, Any]:
+    """
+    Safely add an existing card to a dashboard tab. Automatically:
+    1. Fetches current dashboard state (preserving all existing cards)
+    2. Auto-calculates row position if row=-1 (appends after last card in tab)
+    3. Adds the new card with a negative ID
+    4. Updates the dashboard
+
+    Args:
+        dashboard_id (int): Target dashboard ID.
+        card_id (int): ID of the card to add.
+        tab_id (int): Tab ID where the card should be placed.
+        col (int): Column position (0-23). Defaults to 0.
+        row (int): Row position. Use -1 to auto-append after the last card in the tab.
+        size_x (int): Width in grid units (1-24). Defaults to 6.
+        size_y (int): Height in grid units. Defaults to 4.
+
+    Returns:
+        Dict with the updated dashboard.
+    """
+    # Fetch current state
+    dashboard = await make_metabase_request(
+        RequestMethod.GET, f"/api/dashboard/{dashboard_id}"
+    )
+    existing_dashcards = dashboard.get("dashcards", [])
+
+    # Auto-calculate row if -1
+    if row == -1:
+        tab_cards = [
+            dc for dc in existing_dashcards
+            if dc.get("dashboard_tab_id") == tab_id
+        ]
+        if tab_cards:
+            row = max(dc.get("row", 0) + dc.get("size_y", 4) for dc in tab_cards)
+        else:
+            row = 0
+
+    # Find a safe negative ID
+    existing_ids = [dc.get("id", 0) for dc in existing_dashcards]
+    new_id = min(min(existing_ids, default=0) - 1, -1)
+
+    # Build new dashcard
+    new_dashcard = {
+        "id": new_id,
+        "card_id": card_id,
+        "dashboard_tab_id": tab_id,
+        "col": col,
+        "row": row,
+        "size_x": size_x,
+        "size_y": size_y,
+    }
+
+    # Combine existing + new
+    all_dashcards = existing_dashcards + [new_dashcard]
+
+    payload = {
+        "dashcards": all_dashcards,
+        "tabs": dashboard.get("tabs", []),
+    }
+
+    result = await make_metabase_request(
+        RequestMethod.PUT, f"/api/dashboard/{dashboard_id}", json=payload
+    )
+
+    return {
+        "success": True,
+        "dashboard_id": dashboard_id,
+        "added_card_id": card_id,
+        "position": {"tab_id": tab_id, "col": col, "row": row, "size_x": size_x, "size_y": size_y},
+        "total_cards": len(all_dashcards),
+    }
+
+
+@mcp.tool()
+async def run_sql_and_save_as_card(
+    sql: str,
+    database_id: int,
+    card_name: str,
+    collection_id: int,
+    display: Literal["table", "bar", "line", "area", "pie", "scalar", "row", "combo"] = "table",
+    description: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    Execute a SQL query to verify it works, then save it as a Metabase card.
+    Combines query execution + card creation in one step.
+
+    Args:
+        sql (str): SQL query to execute and save.
+        database_id (int): Database ID to run the query against.
+        card_name (str): Name for the new card.
+        collection_id (int): Collection ID where the card will be saved.
+        display: Visualization type. Defaults to "table".
+        description (str, optional): Card description.
+
+    Returns:
+        Dict with card_id, name, row_count from test execution, and a preview of results.
+    """
+    # Step 1: Test the query
+    test_result = await make_metabase_request(
+        RequestMethod.POST,
+        "/api/dataset",
+        json={
+            "database": database_id,
+            "type": "native",
+            "native": {"query": sql},
+        },
+    )
+
+    row_count = test_result.get("row_count", 0)
+    if test_result.get("status") == "failed":
+        error = test_result.get("error", "Unknown query error")
+        return {
+            "success": False,
+            "error": f"Query failed: {error}. Fix the SQL and try again.",
+            "sql": sql,
+        }
+
+    # Step 2: Save as card
+    card_payload = {
+        "name": card_name,
+        "dataset_query": {
+            "database": database_id,
+            "type": "native",
+            "native": {"query": sql},
+        },
+        "display": display,
+        "collection_id": collection_id,
+        "visualization_settings": {},
+    }
+    if description:
+        card_payload["description"] = description
+
+    card = await make_metabase_request(
+        RequestMethod.POST, "/api/card", json=card_payload
+    )
+
+    return {
+        "success": True,
+        "card_id": card.get("id"),
+        "name": card.get("name"),
+        "display": display,
+        "collection_id": collection_id,
+        "test_row_count": row_count,
+    }
+
+
+@mcp.tool()
+async def create_dashboard_with_sections(
+    name: str,
+    collection_id: int,
+    tabs: List[str],
+    description: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    Create a new multi-tab dashboard with named tabs in one step.
+    Returns the dashboard ID and a mapping of tab names to tab IDs,
+    ready for adding cards.
+
+    Args:
+        name (str): Dashboard name.
+        collection_id (int): Collection to place the dashboard in.
+        tabs (list[str]): List of tab names (e.g., ["Lending", "Issuing", "Acquiring"]).
+        description (str, optional): Dashboard description.
+
+    Returns:
+        Dict with dashboard_id and tabs mapping (name -> id).
+    """
+    # Create the dashboard
+    create_payload: Dict[str, Any] = {
+        "name": name,
+        "collection_id": collection_id,
+    }
+    if description:
+        create_payload["description"] = description
+
+    dashboard = await make_metabase_request(
+        RequestMethod.POST, "/api/dashboard", json=create_payload
+    )
+    dashboard_id = dashboard.get("id")
+
+    # Add tabs
+    tab_list = [{"name": tab_name} for tab_name in tabs]
+    update_payload = {
+        "tabs": tab_list,
+        "dashcards": [],
+    }
+    updated = await make_metabase_request(
+        RequestMethod.PUT, f"/api/dashboard/{dashboard_id}", json=update_payload
+    )
+
+    # Map tab names to IDs from the response
+    tab_mapping = {}
+    for tab in updated.get("tabs", []):
+        tab_mapping[tab.get("name", "")] = tab.get("id")
+
+    return {
+        "success": True,
+        "dashboard_id": dashboard_id,
+        "name": name,
+        "collection_id": collection_id,
+        "tabs": tab_mapping,
+    }
 
 
 if __name__ == "__main__":
