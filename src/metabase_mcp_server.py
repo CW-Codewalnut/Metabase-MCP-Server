@@ -172,10 +172,29 @@ mcp = FastMCP(
         "5. Card creation: Always provide 'dataset_query' with 'database' ID and either "
         "'native' (for SQL) or 'query' (for MBQL) structure.\n"
         "6. Prefer composite tools (add_card_to_dashboard_safe, get_dashboard_overview, "
-        "run_sql_and_save_as_card) over manual multi-step sequences when available."
+        "run_sql_and_save_as_card) over manual multi-step sequences when available.\n"
+        "7. Update tools (update_metabase_card, etc.) automatically fetch current state before applying changes, "
+        "so you only need to provide the fields you want to change.\n\n"
+        "TOOL NAMING CONVENTIONS:\n"
+        "- List resources: get_metabase_<resource>s (e.g., get_metabase_cards, get_metabase_dashboards)\n"
+        "- Get by ID: get_<resource>_by_id (e.g., get_card_by_id, get_dashboard_by_id)\n"
+        "- Composite tools: verb_noun_qualifier (e.g., add_card_to_dashboard_safe, run_sql_and_save_as_card)"
     ),
     lifespan=app_lifespan,
 )
+
+
+async def _safe_update(endpoint: str, resource_id: int, updates: Dict[str, Any]) -> Dict[str, Any]:
+    """GET current state, merge non-None updates, PUT merged state.
+
+    Prevents silent data loss by preserving fields not explicitly updated.
+    Only fields with non-None values in `updates` will override the current state.
+    """
+    current = await make_metabase_request(RequestMethod.GET, f"{endpoint}/{resource_id}")
+    payload = {k: v for k, v in updates.items() if v is not None}
+    if not payload:
+        return current
+    return await make_metabase_request(RequestMethod.PUT, f"{endpoint}/{resource_id}", json=payload)
 
 
 def _get_error_recovery_hint(status: int, endpoint: str) -> str:
@@ -344,15 +363,12 @@ async def update_metabase_collection(collection_id: int, name: Optional[str] = N
     Returns:
         Dict[str, Any]: Updated collection metadata.
     """
-    payload = {}
-    if name:
-        payload["name"] = name
-    if color:
-        payload["color"] = color
-    if parent_id:
-        payload["parent_id"] = parent_id
     logger.info(f"Updating collection {collection_id}")
-    return await make_metabase_request(RequestMethod.PUT, f"/api/collection/{collection_id}", json=payload)
+    return await _safe_update("/api/collection", collection_id, {
+        "name": name,
+        "color": color,
+        "parent_id": parent_id,
+    })
 
 @mcp.tool()
 async def delete_metabase_collection(collection_id: int) -> Dict[str, Any]:
@@ -668,40 +684,24 @@ async def update_metabase_card(
     Returns:
         Dict[str, Any]: Updated card metadata.
     """
-    payload = {}
-    if name is not None:
-        payload["name"] = name
-    if dataset_query is not None:
-        payload["dataset_query"] = dataset_query
-    if display is not None:
-        payload["display"] = display
-    if type is not None:
-        payload["type"] = type
-    if visualization_settings is not None:
-        payload["visualization_settings"] = visualization_settings
-    if collection_id is not None:
-        payload["collection_id"] = collection_id
-    if description is not None:
-        payload["description"] = description
-    if parameter_mappings is not None:
-        payload["parameter_mappings"] = parameter_mappings
-    if collection_position is not None:
-        payload["collection_position"] = collection_position
-    if result_metadata is not None:
-        payload["result_metadata"] = result_metadata
-    if cache_ttl is not None:
-        payload["cache_ttl"] = cache_ttl
-    if parameters is not None:
-        payload["parameters"] = parameters
-    if dashboard_id is not None:
-        payload["dashboard_id"] = dashboard_id
-    if dashboard_tab_id is not None:
-        payload["dashboard_tab_id"] = dashboard_tab_id
-    if entity_id is not None:
-        payload["entity_id"] = entity_id
-
     logger.info(f"Updating card {card_id}")
-    return await make_metabase_request(RequestMethod.PUT, f"/api/card/{card_id}", json=payload)
+    return await _safe_update("/api/card", card_id, {
+        "name": name,
+        "dataset_query": dataset_query,
+        "display": display,
+        "type": type,
+        "visualization_settings": visualization_settings,
+        "collection_id": collection_id,
+        "description": description,
+        "parameter_mappings": parameter_mappings,
+        "collection_position": collection_position,
+        "result_metadata": result_metadata,
+        "cache_ttl": cache_ttl,
+        "parameters": parameters,
+        "dashboard_id": dashboard_id,
+        "dashboard_tab_id": dashboard_tab_id,
+        "entity_id": entity_id,
+    })
 
 @mcp.tool()
 async def delete_metabase_card(card_id: int) -> Dict[str, Any]:
@@ -1148,26 +1148,17 @@ async def update_metabase_database(
     Returns:
         Dict[str, Any]: Updated database metadata.
     """
-    payload = {}
-    if name is not None:
-        payload["name"] = name
-    if details is not None:
-        payload["details"] = details
-    if auto_run_queries is not None:
-        payload["auto_run_queries"] = auto_run_queries
-    if cache_ttl is not None:
-        payload["cache_ttl"] = cache_ttl
-    if is_full_sync is not None:
-        payload["is_full_sync"] = is_full_sync
-    if schedule is not None:
-        payload["schedule"] = schedule
-    if timezone is not None:
-        payload["timezone"] = timezone
-    if metadata_sync is not None:
-        payload["metadata_sync"] = metadata_sync
-
     logger.info(f"Updating database {database_id}")
-    return await make_metabase_request(RequestMethod.PUT, f"/api/database/{database_id}", json=payload)
+    return await _safe_update("/api/database", database_id, {
+        "name": name,
+        "details": details,
+        "auto_run_queries": auto_run_queries,
+        "cache_ttl": cache_ttl,
+        "is_full_sync": is_full_sync,
+        "schedule": schedule,
+        "timezone": timezone,
+        "metadata_sync": metadata_sync,
+    })
 
 @mcp.tool()
 async def delete_metabase_database(database_id: int) -> Dict[str, Any]:
@@ -1264,24 +1255,16 @@ async def update_metabase_user(
     Returns:
         Dict[str, Any]: Updated user metadata.
     """
-    payload = {}
-    if first_name is not None:
-        payload["first_name"] = first_name
-    if last_name is not None:
-        payload["last_name"] = last_name
-    if email is not None:
-        payload["email"] = email
-    if password is not None:
-        payload["password"] = password
-    if login_attributes is not None:
-        payload["login_attributes"] = login_attributes
-    if group_ids is not None:
-        payload["group_ids"] = group_ids
-    if is_superuser is not None:
-        payload["is_superuser"] = is_superuser
-
     logger.info(f"Updating user {user_id}")
-    return await make_metabase_request(RequestMethod.PUT, f"/api/user/{user_id}", json=payload)
+    return await _safe_update("/api/user", user_id, {
+        "first_name": first_name,
+        "last_name": last_name,
+        "email": email,
+        "password": password,
+        "login_attributes": login_attributes,
+        "group_ids": group_ids,
+        "is_superuser": is_superuser,
+    })
 
 
 @mcp.tool()
