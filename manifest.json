@@ -38,8 +38,8 @@
     "METABASE_API_KEY": {
       "type": "string",
       "title": "Metabase API Key",
-      "description": "Metabse API key often starts with “mb_…”",
-      "required": false,
+      "description": "Metabase API key often starts with “mb_…”",
+      "required": true,
       "sensitive": true
     }
   },

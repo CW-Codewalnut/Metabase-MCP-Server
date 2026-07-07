@@ -56,7 +56,7 @@ def parse_configuration() -> Configuration:
         "--log-level", 
         type=str, 
         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
-        default=os.getenv("LOG_LEVEL", "DEBUG"),
+        default=os.getenv("LOG_LEVEL", "INFO"),
         help="Logging level"
     )
     parser.add_argument(

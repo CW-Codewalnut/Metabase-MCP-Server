@@ -103,7 +103,7 @@ cd ~/Downloads/metabase-mcp-server-dev
 
 **Option 1: Download ZIP**
 
-1.  Go to the [GitHub repository](https://github.com/codewalnut/metabase-mcp-server)
+1.  Go to the [GitHub repository](https://github.com/CW-Codewalnut/Metabase-MCP-Server)
 2.  Click the green **"Code"** button
 3.  Select **"Download ZIP"**
 4.  Unzip the downloaded file to a location like your **Documents** folder
@@ -111,8 +111,8 @@ cd ~/Downloads/metabase-mcp-server-dev
 **Option 2: Use Git** If you're familiar with Git, run this in your terminal:
 
 ```bash
-git clone https://github.com/codewalnut/metabase-mcp-server.git
-cd metabase-mcp-server
+git clone https://github.com/CW-Codewalnut/Metabase-MCP-Server.git
+cd Metabase-MCP-Server
 
 ```
 
@@ -141,14 +141,14 @@ METABASE_API_KEY=mb_xxx_your_key
 PORT=3200
 HOST=localhost
 TRANSPORT=streamable-http
-LOG_LEVEL=DEBUG
+LOG_LEVEL=INFO
 ```
 
 **Option 2: Using command-line arguments**
 Pass configuration directly via command line:
 
 ```bash
- uv run src/metabase_mcp_server.py --metabase-url http://localhost:3000 --metabase-api-key "YOUR_API_KEY" --port 3200 --host localhost --transport streamable-http --log-level DEBUG
+uv run src/metabase_mcp_server.py --metabase-url http://localhost:3000 --metabase-api-key "YOUR_API_KEY" --port 3200 --host localhost --transport streamable-http --log-level INFO
 ```
 
 **Option 3: Using environment variables in MCP client config**
@@ -169,7 +169,7 @@ Configure directly in your MCP client without a `.env` file (see examples below)
         "PORT": 3200,
         "HOST": "localhost",
         "TRANSPORT": "streamable-http",
-        "LOG_LEVEL": "DEBUG"
+        "LOG_LEVEL": "INFO"
       }
     }
   }
@@ -207,7 +207,7 @@ Mac:
   "mcpServers": {
     "metabase": {
       "type": "stdio",
-      "command": "/Users/YourName/Projects/metabase-mcp-server/venv/Scripts/python",
+      "command": "/Users/YourName/Projects/metabase-mcp-server/.venv/bin/python",
       "args": [
         "/Users/YourName/Projects/metabase-mcp-server/src/metabase_mcp_server.py"
       ]
@@ -269,10 +269,10 @@ The Metabase MCP Server supports flexible configuration through environment vari
 | ------------------ | -------------------------- | ----------------- | --------------------------- |
 | `METABASE_URL`     | Your Metabase instance URL | Required          | `http://127.0.0.1:3000`     |
 | `METABASE_API_KEY` | Your Metabase API key      | Required          | `mb_xxx_your_api_key`       |
-| `TRANSPORT`        | Transport protocol         | `streamable-http` | `stdio`, `streamable-http`  |
+| `TRANSPORT`        | Transport protocol         | `stdio`           | `stdio`, `streamable-http`  |
 | `HOST`             | Host for HTTP transports   | `localhost`       | `0.0.0.0`, `127.0.0.1`      |
 | `PORT`             | Port for HTTP transports   | `3200`            | `8080`, `9000`              |
-| `LOG_LEVEL`        | Logging level              | `INFO`            | `DEBUG`, `WARNING`, `ERROR` |
+| `LOG_LEVEL`        | Logging level              | `INFO`            | `DEBUG`, `INFO`, `WARNING`, `ERROR` |
 
 ### Command-line Arguments
 
@@ -280,7 +280,7 @@ The Metabase MCP Server supports flexible configuration through environment vari
 | -------------------- | ------------------------ | ----------------- |
 | `--metabase-url`     | Metabase instance URL    | Required          |
 | `--metabase-api-key` | Metabase API key         | Required          |
-| `--transport`        | Transport protocol       | `streamable-http` |
+| `--transport`        | Transport protocol       | `stdio`           |
 | `--host`             | Host for HTTP transports | `localhost`       |
 | `--port`             | Port for HTTP transports | `3200`            |
 | `--log-level`        | Logging verbosity level  | `INFO`            |
@@ -330,17 +330,17 @@ To get your Metabase API key:
 
 ## 📂 DXT File Support
 
-You no longer need to go through the steps of cloning the repository and setting up the environment. Simply follow the steps below to install the **Metabase MCP Server** in your **Cloude Desktop App**:
+You no longer need to go through the steps of cloning the repository and setting up the environment. Simply follow the steps below to install the **Metabase MCP Server** in your **Claude Desktop App**:
 
 1. **Download the DXT File**  
    Check the link below to download the latest **DXT file** directly:  
    [Download DXT File](./metabase-mcp-server.dxt)
 
-2. **Open the Cloude Desktop App**  
-   Once you have the file, open the **Cloude Desktop App** on your system.
+2. **Open the Claude Desktop App**  
+   Once you have the file, open the **Claude Desktop App** on your system.
 
 3. **Navigate to Extensions Settings**  
-   In the **Cloude Desktop App**:
+   In the **Claude Desktop App**:
 
    - Go to **Files** → **Settings** → **Extensions**
    - Then click on **Advanced Settings**.
@@ -349,7 +349,7 @@ You no longer need to go through the steps of cloning the repository and setting
    In the **Advanced Settings** section, click on **Choose File**, select the downloaded **DXT file**.
 
 5. **Enter the Required Details**  
-   After slecting the **DXT file**, a prompt will appear asking you to fill in the required details:
+   After selecting the **DXT file**, a prompt will appear asking you to fill in the required details:
 
    - **Metabase URL**: Enter your Metabase server URL.
    - **API Key**: Add the relevant API key for authentication.
@@ -357,7 +357,7 @@ You no longer need to go through the steps of cloning the repository and setting
 6. **Complete the Setup**  
    After entering the necessary details, click **Save** to apply the configuration.
 
-That's it! The **Metabase MCP Server** is now installed and ready to use in your **Cloude Desktop App**.
+That's it! The **Metabase MCP Server** is now installed and ready to use in your **Claude Desktop App**.
 
 ## How to Create Your Own DXT File
 
@@ -401,7 +401,7 @@ services:
       ##- PORT=3200
       ##- HOST=localhost
       ##- TRANSPORT=streamable-http
-      ##- LOG_LEVEL=DEBUG
+      ##- LOG_LEVEL=INFO
     restart: unless-stopped
 ```
 
