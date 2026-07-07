@@ -277,7 +277,7 @@ async def create_metabase_collection(name: str, color: Optional[str] = None, par
     payload = {"name": name}
     if color:
         payload["color"] = color
-    if parent_id:
+    if parent_id is not None:
         payload["parent_id"] = parent_id
     logger.info(f"Creating collection '{name}'")
     return await make_metabase_request(RequestMethod.POST, "/api/collection", json=payload)
@@ -301,7 +301,7 @@ async def update_metabase_collection(collection_id: int, name: Optional[str] = N
         payload["name"] = name
     if color:
         payload["color"] = color
-    if parent_id:
+    if parent_id is not None:
         payload["parent_id"] = parent_id
     logger.info(f"Updating collection {collection_id}")
     return await make_metabase_request(RequestMethod.PUT, f"/api/collection/{collection_id}", json=payload)
@@ -630,8 +630,6 @@ async def update_metabase_card(
                 logger.error("Invalid JSON in visualization_settings")
                 raise ValueError("visualization_settings must be a valid JSON object")
         payload["visualization_settings"] = visualization_settings
-    else:
-        payload["visualization_settings"] = {}
     if collection_id is not None:
         payload["collection_id"] = collection_id
     if description is not None:
