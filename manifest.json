@@ -1,5 +1,5 @@
 {
-  "dxt_version": "0.1",
+  "manifest_version": "0.4",
   "name": "metabase-mcp-server.codewalnut.com",
   "display_name": "Metabase",
   "version": "0.1.0",
@@ -14,12 +14,15 @@
   "support": "https://www.codewalnut.com/contact-us",
   "icon": "${__dirname}\\assets\\metabase-logo.png",
   "server": {
-    "type": "python",
+    "type": "uv",
     "entry_point": "src\\metabase_mcp_server.py",
     "mcp_config": {
-      "command": "${__dirname}\\.venv\\Scripts\\python.exe",
+      "command": "uv",
       "args": [
-        "${__dirname}\\src\\metabase_mcp_server.py"
+        "run",
+        "--directory",
+        "${__dirname}",
+        "src/metabase_mcp_server.py"
       ],
       "env": {
         "METABASE_URL": "${user_config.METABASE_URL}",
