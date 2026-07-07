@@ -273,9 +273,6 @@ The Metabase MCP Server supports flexible configuration through environment vari
 | `HOST`             | Host for HTTP transports   | `localhost`       | `0.0.0.0`, `127.0.0.1`      |
 | `PORT`             | Port for HTTP transports   | `3200`            | `8080`, `9000`              |
 | `LOG_LEVEL`        | Logging level              | `INFO`            | `DEBUG`, `WARNING`, `ERROR` |
-| `ALLOW_WRITE_TOOLS` | Enable collection/card/dashboard mutations | `true` for stdio, `false` for HTTP/SSE | `true`, `false` |
-| `ALLOW_ADMIN_TOOLS` | Enable user/group/database mutations | `true` for stdio, `false` for HTTP/SSE | `true`, `false` |
-| `ALLOW_SQL_TOOL` | Enable native SQL execution | `true` for stdio, `false` for HTTP/SSE | `true`, `false` |
 
 ### Command-line Arguments
 
@@ -287,9 +284,6 @@ The Metabase MCP Server supports flexible configuration through environment vari
 | `--host`             | Host for HTTP transports | `localhost`       |
 | `--port`             | Port for HTTP transports | `3200`            |
 | `--log-level`        | Logging verbosity level  | `INFO`            |
-| `--allow-write-tools` | Enable collection/card/dashboard mutations | Enabled for stdio, disabled for HTTP/SSE |
-| `--allow-admin-tools` | Enable user/group/database mutations | Enabled for stdio, disabled for HTTP/SSE |
-| `--allow-sql-tool` | Enable native SQL execution | Enabled for stdio, disabled for HTTP/SSE |
 
 ### Transport Protocols
 
@@ -408,15 +402,13 @@ services:
       ##- HOST=localhost
       ##- TRANSPORT=streamable-http
       ##- LOG_LEVEL=DEBUG
-      ##- ALLOW_WRITE_TOOLS=false
-      ##- ALLOW_ADMIN_TOOLS=false
-      ##- ALLOW_SQL_TOOL=false
     restart: unless-stopped
 ```
 
 Remote HTTP/SSE transports are read-only by default. Set the matching `ALLOW_*`
 environment variable to `true` only when the server is behind trusted access
-controls and the configured Metabase API key is allowed to make those changes.
+controls and the configured Metabase API key is allowed to make those changes:
+`ALLOW_WRITE_TOOLS`, `ALLOW_ADMIN_TOOLS`, and `ALLOW_SQL_TOOL`.
 
 #### Connecting to Remote MCP Server
 
