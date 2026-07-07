@@ -13,4 +13,4 @@ RUN uv sync --compile-bytecode
 EXPOSE 3200
 
 # Run the app
-CMD ["uv", "run", "src/metabase_mcp_server.py", "--host", "0.0.0.0", "--port", "3200"]
+CMD ["uv", "run", "metabase-mcp-server", "--host", "0.0.0.0", "--port", "3200"]

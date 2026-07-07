@@ -15,11 +15,12 @@
   "icon": "${__dirname}\\assets\\metabase-logo.png",
   "server": {
     "type": "python",
-    "entry_point": "src\\metabase_mcp_server.py",
+    "entry_point": "src\\metabase_mcp_server\\__main__.py",
     "mcp_config": {
       "command": "${__dirname}\\.venv\\Scripts\\python.exe",
       "args": [
-        "${__dirname}\\src\\metabase_mcp_server.py"
+        "-m",
+        "metabase_mcp_server"
       ],
       "env": {
         "METABASE_URL": "${user_config.METABASE_URL}",

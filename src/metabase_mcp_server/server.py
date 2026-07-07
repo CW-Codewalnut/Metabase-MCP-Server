@@ -5,12 +5,12 @@ import argparse
 from yarl import URL
 from dotenv import load_dotenv
 from fastmcp import FastMCP
-from enums.request_enum import RequestMethod
+from .enums.request_enum import RequestMethod
 from typing import Dict, Any, Optional, List, Union
 from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
-from errors.metabase_errors import MetabaseConnectionError, MetabaseResponseError
-from models import DashboardCard, DashboardTab, EmbeddingParams, Configuration, TransportType, LogLevelType
+from .errors.metabase_errors import MetabaseConnectionError, MetabaseResponseError
+from .models import DashboardCard, DashboardTab, EmbeddingParams, Configuration, TransportType, LogLevelType
 
 def parse_configuration() -> Configuration:
     """
@@ -1341,7 +1341,7 @@ async def execute_sql_query(
     return await make_metabase_request(RequestMethod.POST, "/api/dataset", json=query_payload)
 
 
-if __name__ == "__main__":
+def main() -> None:
     # Start the MCP server with configuration from arguments/environment
     logger.info(f"Starting Metabase MCP Server on {HOST}:{PORT}")
     logger.info(f"Using transport: {TRANSPORT}")
@@ -1352,3 +1352,7 @@ if __name__ == "__main__":
         mcp.run(transport=TRANSPORT)
     else:
         mcp.run(host=HOST, port=PORT, transport=TRANSPORT) 
+
+
+if __name__ == "__main__":
+    main()
