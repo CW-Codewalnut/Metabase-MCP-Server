@@ -148,7 +148,7 @@ LOG_LEVEL=DEBUG
 Pass configuration directly via command line:
 
 ```bash
- uv run metabase-mcp-server --metabase-url http://localhost:3000 --metabase-api-key "YOUR_API_KEY" --port 3200 --host localhost --transport streamable-http --log-level DEBUG
+ uv run src/metabase_mcp_server.py --metabase-url http://localhost:3000 --metabase-api-key "YOUR_API_KEY" --port 3200 --host localhost --transport streamable-http --log-level DEBUG
 ```
 
 **Option 3: Using environment variables in MCP client config**
@@ -161,8 +161,7 @@ Configure directly in your MCP client without a `.env` file (see examples below)
       "type": "stdio",
       "command": "C:\\Users\\YourName\\Projects\\metabase-mcp-server\\.venv\\Scripts\\python.exe",
       "args": [
-        "-m",
-        "metabase_mcp_server"
+        "C:\\Users\\YourName\\Projects\\metabase-mcp-server\\src\\metabase_mcp_server.py"
       ],
       "env": {
         "METABASE_URL": "http://localhost:3000",
@@ -210,8 +209,7 @@ Mac:
       "type": "stdio",
       "command": "/Users/YourName/Projects/metabase-mcp-server/venv/Scripts/python",
       "args": [
-        "-m",
-        "metabase_mcp_server"
+        "/Users/YourName/Projects/metabase-mcp-server/src/metabase_mcp_server.py"
       ]
     }
   }
@@ -306,7 +304,7 @@ Configuration values are applied in the following priority order (highest to low
 ### Complete Command Examples
 
 ```bash
-uv run metabase-mcp-server --transport streamable-http --host localhost --port 3200 --metabase-url http://127.0.0.1:3000 --metabase-api-key mb_xxx_your_key
+uv run src/metabase_mcp_server.py --transport streamable-http --host localhost --port 3200 --metabase-url http://127.0.0.1:3000 --metabase-api-key mb_xxx_your_key
 
 ```
 
@@ -472,7 +470,7 @@ First, install Node.js if you haven't already:
 npm install -g @modelcontextprotocol/inspector
 
 # Run the inspector with your Metabase MCP Server
-npx @modelcontextprotocol/inspector uv run metabase-mcp-server
+npx @modelcontextprotocol/inspector uv run FULL_PATH/metabase-mcp-server/src/metabase_mcp_server.py
 ```
 
 ### Using MCP Inspector
