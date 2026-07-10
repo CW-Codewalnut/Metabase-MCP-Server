@@ -269,21 +269,21 @@ The Metabase MCP Server supports flexible configuration through environment vari
 | ------------------ | -------------------------- | ----------------- | --------------------------- |
 | `METABASE_URL`     | Your Metabase instance URL | Required          | `http://127.0.0.1:3000`     |
 | `METABASE_API_KEY` | Your Metabase API key      | Required          | `mb_xxx_your_api_key`       |
-| `TRANSPORT`        | Transport protocol         | `stdio`           | `stdio`, `streamable-http`  |
+| `TRANSPORT`        | Transport protocol         | `stdio`           | `stdio`, `sse`, `streamable-http` |
 | `HOST`             | Host for HTTP transports   | `localhost`       | `0.0.0.0`, `127.0.0.1`      |
 | `PORT`             | Port for HTTP transports   | `3200`            | `8080`, `9000`              |
 | `LOG_LEVEL`        | Logging level              | `INFO`            | `DEBUG`, `INFO`, `WARNING`, `ERROR` |
 
 ### Command-line Arguments
 
-| Argument             | Description              | Default Value     |
-| -------------------- | ------------------------ | ----------------- |
-| `--metabase-url`     | Metabase instance URL    | Required          |
-| `--metabase-api-key` | Metabase API key         | Required          |
-| `--transport`        | Transport protocol       | `stdio`           |
-| `--host`             | Host for HTTP transports | `localhost`       |
-| `--port`             | Port for HTTP transports | `3200`            |
-| `--log-level`        | Logging verbosity level  | `INFO`            |
+| Argument             | Description              | Options                             | Default Value |
+| -------------------- | ------------------------ | ----------------------------------- | ------------- |
+| `--metabase-url`     | Metabase instance URL    | Any Metabase URL                    | Required      |
+| `--metabase-api-key` | Metabase API key         | `mb_...` key                        | Required      |
+| `--transport`        | Transport protocol       | `stdio`, `sse`, `streamable-http`   | `stdio`       |
+| `--host`             | Host for HTTP transports | Any host or IP                      | `localhost`   |
+| `--port`             | Port for HTTP transports | Any port number                     | `3200`        |
+| `--log-level`        | Logging verbosity level  | `DEBUG`, `INFO`, `WARNING`, `ERROR` | `INFO`        |
 
 ### Transport Protocols
 
