@@ -405,6 +405,11 @@ services:
     restart: unless-stopped
 ```
 
+Remote HTTP/SSE transports are read-only by default. Set the matching `ALLOW_*`
+environment variable to `true` only when the server is behind trusted access
+controls and the configured Metabase API key is allowed to make those changes:
+`ALLOW_WRITE_TOOLS`, `ALLOW_ADMIN_TOOLS`, and `ALLOW_SQL_TOOL`.
+
 #### Connecting to Remote MCP Server
 
 Once deployed, configure your MCP clients to connect to the remote server:

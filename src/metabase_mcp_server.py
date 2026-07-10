@@ -12,6 +12,12 @@ from collections.abc import AsyncIterator
 from errors.metabase_errors import MetabaseConnectionError, MetabaseResponseError
 from models import DashboardCard, DashboardTab, EmbeddingParams, Configuration, TransportType, LogLevelType
 
+def parse_optional_bool(value: Optional[str]) -> Optional[bool]:
+    if value is None:
+        return None
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
 def parse_configuration() -> Configuration:
     """
     Parse configuration from command line arguments and environment variables.
@@ -71,6 +77,24 @@ def parse_configuration() -> Configuration:
         default=os.getenv("METABASE_API_KEY", ""),
         help="Metabase API key"
     )
+    parser.add_argument(
+        "--allow-write-tools",
+        action=argparse.BooleanOptionalAction,
+        default=parse_optional_bool(os.getenv("ALLOW_WRITE_TOOLS")),
+        help="Enable create/update/delete tools. Defaults to enabled for stdio and disabled for remote transports."
+    )
+    parser.add_argument(
+        "--allow-admin-tools",
+        action=argparse.BooleanOptionalAction,
+        default=parse_optional_bool(os.getenv("ALLOW_ADMIN_TOOLS")),
+        help="Enable user, group, and database mutation tools. Defaults to enabled for stdio and disabled for remote transports."
+    )
+    parser.add_argument(
+        "--allow-sql-tool",
+        action=argparse.BooleanOptionalAction,
+        default=parse_optional_bool(os.getenv("ALLOW_SQL_TOOL")),
+        help="Enable native SQL execution. Defaults to enabled for stdio and disabled for remote transports."
+    )
     
     # Parse arguments
     args = parser.parse_args()
@@ -84,6 +108,7 @@ def parse_configuration() -> Configuration:
     # Type cast the transport and log_level to ensure they match the Literal types
     transport: TransportType = args.transport  # type: ignore
     log_level: LogLevelType = args.log_level  # type: ignore
+    local_transport = transport == "stdio"
     
     return Configuration(
         host=args.host,
@@ -91,7 +116,10 @@ def parse_configuration() -> Configuration:
         transport=transport,
         log_level=log_level,
         metabase_url=args.metabase_url,
-        metabase_api_key=args.metabase_api_key
+        metabase_api_key=args.metabase_api_key,
+        allow_write_tools=args.allow_write_tools if args.allow_write_tools is not None else local_transport,
+        allow_admin_tools=args.allow_admin_tools if args.allow_admin_tools is not None else local_transport,
+        allow_sql_tool=args.allow_sql_tool if args.allow_sql_tool is not None else local_transport,
     )
 
 # Parse configuration
@@ -104,6 +132,9 @@ METABASE_URL = config.metabase_url
 METABASE_API_KEY = config.metabase_api_key
 TRANSPORT = config.transport
 LOG_LEVEL = getattr(logging, config.log_level.upper())
+ALLOW_WRITE_TOOLS = config.allow_write_tools
+ALLOW_ADMIN_TOOLS = config.allow_admin_tools
+ALLOW_SQL_TOOL = config.allow_sql_tool
 
 session: Optional[aiohttp.ClientSession] = None
 
@@ -125,6 +156,14 @@ def ensure_dict_response(response: Any) -> Dict[str, Any]:
         return response
     else:
         return {"data": response}
+
+
+def require_tool_enabled(enabled: bool, tool_group: str, flag: str) -> None:
+    if not enabled:
+        raise PermissionError(
+            f"{tool_group} are disabled for {TRANSPORT} transport. "
+            f"Restart with {flag} or the matching environment variable to enable them."
+        )
 
 @asynccontextmanager
 async def app_lifespan(server: FastMCP) -> AsyncIterator[None]:
@@ -274,6 +313,7 @@ async def create_metabase_collection(name: str, color: Optional[str] = None, par
     Returns:
         Dict[str, Any]: Newly created collection metadata.
     """
+    require_tool_enabled(ALLOW_WRITE_TOOLS, "Write tools", "--allow-write-tools")
     payload = {"name": name}
     if color:
         payload["color"] = color
@@ -296,6 +336,7 @@ async def update_metabase_collection(collection_id: int, name: Optional[str] = N
     Returns:
         Dict[str, Any]: Updated collection metadata.
     """
+    require_tool_enabled(ALLOW_WRITE_TOOLS, "Write tools", "--allow-write-tools")
     payload = {}
     if name:
         payload["name"] = name
@@ -317,6 +358,7 @@ async def delete_metabase_collection(collection_id: int) -> Dict[str, Any]:
     Returns:
         Dict[str, Any]: Confirmation of the collection deletion.
     """
+    require_tool_enabled(ALLOW_WRITE_TOOLS, "Write tools", "--allow-write-tools")
     logger.info(f"Deleting collection {collection_id}")
     return await make_metabase_request(RequestMethod.DELETE, f"/api/collection/{collection_id}")
 
@@ -525,6 +567,7 @@ async def create_metabase_card(
             )
     """
 
+    require_tool_enabled(ALLOW_WRITE_TOOLS, "Write tools", "--allow-write-tools")
     payload = {
         "name": name,
         "dataset_query": dataset_query,
@@ -612,6 +655,7 @@ async def update_metabase_card(
     Returns:
         Dict[str, Any]: Updated card metadata.
     """
+    require_tool_enabled(ALLOW_WRITE_TOOLS, "Write tools", "--allow-write-tools")
     payload = {}
     if name is not None:
         payload["name"] = name
@@ -665,6 +709,7 @@ async def delete_metabase_card(card_id: int) -> Dict[str, Any]:
     Returns:
         Dict[str, Any]: Deletion confirmation.
     """
+    require_tool_enabled(ALLOW_WRITE_TOOLS, "Write tools", "--allow-write-tools")
     logger.info(f"Deleting card {card_id}")
     return await make_metabase_request(RequestMethod.DELETE, f"/api/card/{card_id}")
 
@@ -748,6 +793,7 @@ async def create_metabase_dashboard(
     Returns:
         Dict[str, Any]: Created dashboard metadata.
     """
+    require_tool_enabled(ALLOW_WRITE_TOOLS, "Write tools", "--allow-write-tools")
     payload = {
         "name": name,
     }
@@ -897,6 +943,7 @@ async def update_metabase_dashboard(
     """
 
 
+    require_tool_enabled(ALLOW_WRITE_TOOLS, "Write tools", "--allow-write-tools")
     # 🧱 Fetch current dashboard to fallback for dashcards and tabs
     existing_dashboard = await make_metabase_request(RequestMethod.GET, f"/api/dashboard/{dashboard_id}")
 
@@ -958,6 +1005,7 @@ async def delete_metabase_dashboard(dashboard_id: int) -> Dict[str, Any]:
     Returns:
         Dict[str, Any]: Deletion confirmation.
     """
+    require_tool_enabled(ALLOW_WRITE_TOOLS, "Write tools", "--allow-write-tools")
     logger.info(f"Deleting dashboard {dashboard_id}")
     return await make_metabase_request(RequestMethod.DELETE, f"/api/dashboard/{dashboard_id}")
 
@@ -984,6 +1032,7 @@ async def copy_metabase_dashboard(
     Returns:
         Dict[str, Any]: New dashboard metadata.
     """
+    require_tool_enabled(ALLOW_WRITE_TOOLS, "Write tools", "--allow-write-tools")
     payload = {
         "name": name,
     }
@@ -1045,6 +1094,7 @@ async def create_metabase_database(
     Returns:
         Dict[str, Any]: Created database metadata.
     """
+    require_tool_enabled(ALLOW_ADMIN_TOOLS, "Admin tools", "--allow-admin-tools")
     payload = {
         "name": name,
         "engine": engine,
@@ -1095,6 +1145,7 @@ async def update_metabase_database(
     Returns:
         Dict[str, Any]: Updated database metadata.
     """
+    require_tool_enabled(ALLOW_ADMIN_TOOLS, "Admin tools", "--allow-admin-tools")
     payload = {}
     if name is not None:
         payload["name"] = name
@@ -1127,6 +1178,7 @@ async def delete_metabase_database(database_id: int) -> Dict[str, Any]:
     Returns:
         Dict[str, Any]: Deletion confirmation.
     """
+    require_tool_enabled(ALLOW_ADMIN_TOOLS, "Admin tools", "--allow-admin-tools")
     logger.info(f"Deleting database {database_id}")
     return await make_metabase_request(RequestMethod.DELETE, f"/api/database/{database_id}")
 
@@ -1167,6 +1219,7 @@ async def create_metabase_user(
     Returns:
         Dict[str, Any]: Created user metadata.
     """
+    require_tool_enabled(ALLOW_ADMIN_TOOLS, "Admin tools", "--allow-admin-tools")
     payload = {
         "first_name": first_name,
         "last_name": last_name,
@@ -1211,6 +1264,7 @@ async def update_metabase_user(
     Returns:
         Dict[str, Any]: Updated user metadata.
     """
+    require_tool_enabled(ALLOW_ADMIN_TOOLS, "Admin tools", "--allow-admin-tools")
     payload = {}
     if first_name is not None:
         payload["first_name"] = first_name
@@ -1242,6 +1296,7 @@ async def delete_metabase_user(user_id: int) -> Dict[str, Any]:
     Returns:
         Dict[str, Any]: Deletion confirmation.
     """
+    require_tool_enabled(ALLOW_ADMIN_TOOLS, "Admin tools", "--allow-admin-tools")
     logger.info(f"Deleting user {user_id}")
     return await make_metabase_request(RequestMethod.DELETE, f"/api/user/{user_id}")
 
@@ -1283,6 +1338,7 @@ async def create_metabase_group(
     Returns:
         Dict[str, Any]: Created group metadata.
     """
+    require_tool_enabled(ALLOW_ADMIN_TOOLS, "Admin tools", "--allow-admin-tools")
     payload = {"name": name}
     if ldap_dn is not None:
         payload["ldap_dn"] = ldap_dn
@@ -1301,6 +1357,7 @@ async def delete_metabase_group(group_id: int) -> Dict[str, Any]:
     Returns:
         Dict[str, Any]: Deletion confirmation.
     """
+    require_tool_enabled(ALLOW_ADMIN_TOOLS, "Admin tools", "--allow-admin-tools")
     logger.info(f"Deleting group {group_id}")
     return await make_metabase_request(RequestMethod.DELETE, f"/api/permissions/group/{group_id}")
 
@@ -1328,6 +1385,7 @@ async def execute_sql_query(
         - Example with quoted column names: 
           SELECT "userId", "orderDate", COUNT(*) FROM "Orders" GROUP BY "userId", "orderDate"
     """
+    require_tool_enabled(ALLOW_SQL_TOOL, "SQL tools", "--allow-sql-tool")
     query_payload = {
         "database": database_id,
         "type": "native",
