@@ -570,7 +570,7 @@ Stay connected and get support through our community channels:
 - **💼 LinkedIn:** [CodeWalnut](https://www.linkedin.com/company/codewalnut)
 - **📺 YouTube:** [CodeWalnut Channel](https://www.youtube.com/@CodeWalnut)
 - **🐦 Twitter/X:** [@codewalnut](https://x.com/codewalnut)
-- **📷 Instagram:** [@codewalnut](https://www.instagram.com/teamwalnut_)
+- **📷 Instagram:** [@codewalnut](https://www.instagram.com/codewalnut)
 
 ### 💬 Community Support
 
