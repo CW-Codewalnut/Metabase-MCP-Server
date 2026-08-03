@@ -1,6 +1,10 @@
 # Ignore Python caches
 __pycache__/
 *.pyc
+.venv/
+dist/
+build/
+*.egg-info/
 
 
 # Ignore editor/OS junk
